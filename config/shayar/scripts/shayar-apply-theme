@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# shayar-apply-theme: apply a theme's file overlays via themed.lst manifest
+# Usage: shayar-apply-theme <theme-name>
+
+THEME_NAME="${1:-}"
+THEME_DIR="$HOME/.config/shayar/themes/$THEME_NAME"
+MANIFEST="$THEME_DIR/themed.lst"
+CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+
+if [ -z "$THEME_NAME" ]; then
+    echo "Usage: $0 <theme-name>"
+    echo "Available themes:"
+    for d in "$HOME/.config/shayar/themes"/*/; do
+        [ -f "${d}themed.lst" ] && echo "  $(basename "$d")"
+    done
+    exit 1
+fi
+
+if [ ! -f "$MANIFEST" ]; then
+    echo "Error: Theme '$THEME_NAME' has no themed.lst at $MANIFEST"
+    exit 1
+fi
+
+while IFS= read -r line || [ -n "$line" ]; do
+    # Skip blank lines and comments
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ "$line" =~ ^[[:space:]]*$ ]] && continue
+
+    read -r target source <<< "$line"
+
+    target="$CONFIG_HOME/$target"
+    source="$THEME_DIR/files/$source"
+
+    mkdir -p "$(dirname "$target")"
+
+    if [ -f "$target" ] && [ ! -L "$target" ]; then
+        # Back up regular file before replacing with symlink
+        cp "$target" "${target}.bak" 2>/dev/null || true
+    fi
+
+    ln -sf "$source" "$target"
+    echo "  Linked $target → $source"
+done < "$MANIFEST"
+
+echo "Theme '$THEME_NAME' applied"

@@ -1,0 +1,2 @@
+@import "~/.config/shayar/themes/design-tokens.rasi"
+* { border-width: @dt-spacing-rofi-border-width; }

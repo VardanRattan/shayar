@@ -1,0 +1,3 @@
+-- Environment config
+-- Env vars are defined in conf/shayar.lua (lines 112-142).
+-- This file exists as a load-order placeholder for hyprland.lua:31.

@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+set -euo pipefail
+#    ____         __       ____               __     __
+#   /  _/__  ___ / /____ _/ / / __ _____  ___/ /__ _/ /____ ___
+#  _/ // _ \(_-</ __/ _ `/ / / / // / _ \/ _  / _ `/ __/ -_|_-<
+# /___/_//_/___/\__/\_,_/_/_/  \_,_/ .__/\_,_/\_,_/\__/\__/___/
+#                                 /_/
+#
+
+# Check if command exists
+_checkCommandExists() {
+    command -v "$1" &> /dev/null
+}
+
+
+# ------------------------------------------------------
+# Confirm Start
+# ------------------------------------------------------
+
+sleep 1
+clear
+command -v figlet >/dev/null 2>&1 && figlet -f smslant "Updates"
+echo
+primarycolor=$(cat ~/.config/shayar/colors/primary 2>/dev/null || echo "#ffffff")
+onsurfacecolor=$(cat ~/.config/shayar/colors/onsurface 2>/dev/null || echo "#000000")
+onprimarycolor=$(cat ~/.config/shayar/colors/onprimary 2>/dev/null || echo "#ffffff")
+if command -v gum >/dev/null 2>&1; then
+    if gum confirm --selected.background="$primarycolor" --selected.foreground="$onprimarycolor" --prompt.foreground="$onsurfacecolor" "DO YOU WANT TO START THE UPDATE NOW?"; then
+        echo
+        echo ":: Update started..."
+    else
+        echo
+        echo ":: Update canceled."
+        exit
+    fi
+else
+    echo ":: DO YOU WANT TO START THE UPDATE NOW? [y/N]"
+    read -r answer
+    if [[ "$answer" != [yY] ]]; then
+        echo ":: Update canceled."
+        exit
+    fi
+    echo
+    echo ":: Update started..."
+fi
+
+# ----------------------------------------------------- 
+# Install update
+# ----------------------------------------------------- 
+
+# Arch
+if _checkCommandExists "pacman"; then
+
+    yay_installed="false"
+    paru_installed="false"
+    if _checkCommandExists "yay"; then
+        yay_installed="true"
+    fi
+    if _checkCommandExists "paru"; then
+        paru_installed="true"
+    fi
+    if [[ $yay_installed == "true" ]] && [[ $paru_installed == "false" ]]; then
+        yay
+    elif [[ $yay_installed == "false" ]] && [[ $paru_installed == "true" ]]; then
+        paru -Syu --noconfirm
+    else
+        yay
+    fi
+
+# Fedora
+elif _checkCommandExists "dnf"; then
+    sudo dnf upgrade
+else
+    echo ":: ERROR - Platform not supported"
+    echo "Press [ENTER] to close."
+    read
+fi
+echo
+
+# Flatpak
+if command -v flatpak >/dev/null 2>&1; then
+    echo ":: Searching for Flatpak updates..."
+    flatpak update
+    echo
+fi
+
+# Reload Waybar
+pkill -RTMIN+1 waybar
+
+
+
+# Finishing
+echo ":: Update complete! Press [ENTER] to close."
+read

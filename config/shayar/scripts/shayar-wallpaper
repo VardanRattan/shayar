@@ -1,0 +1,227 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ============================================================
+# Variables
+# ============================================================
+IMAGE_PATH=""
+EFFECT=""
+NOTIFICATIONS=false
+SKIP_WALLPAPER=false
+SKIP_THEMING=false
+MONITOR_OUTPUT=""
+AWWW_CROP_GRAVITY="center"
+CACHE_FOLDER="$HOME/.cache/shayar/hyprland-dotfiles"
+CACHE_FILE="$CACHE_FOLDER/current_wallpaper"
+DEFAULT_WALLPAPER="$HOME/.config/shayar/wallpapers/default.png"
+BLURRED_WALLPAPER="$CACHE_FOLDER/blurred_wallpaper.png"
+SQUARE_WALLPAPER="$CACHE_FOLDER/square_wallpaper.png"
+RASI_FILE="$CACHE_FOLDER/current_wallpaper.rasi"
+source "$HOME/.config/shayar/settings/shayar.conf" 2>/dev/null
+[ -f "$HOME/.config/shayar/library.sh" ] && source "$HOME/.config/shayar/library.sh"
+
+# ============================================================
+# Logging
+# ============================================================
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+info()  { echo -e "${GREEN}[INFO]${NC} $1" >&2; }
+warn()  { echo -e "${YELLOW}[WARN]${NC} $1" >&2; }
+error() { echo -e "${RED}[ERROR]${NC} $1" >&2; }
+
+# ============================================================
+# Functions
+# ============================================================
+
+show_help() {
+    echo "Usage: shayar-wallpaper PATH_TO_IMAGE [OPTIONS]"
+    echo "  DEFAULT:               $DEFAULT_WALLPAPER"
+    echo ""
+    echo "Core Parameters:"
+    echo "  PATH_TO_IMAGE          Path to the image file to set as wallpaper."
+    echo ""
+    echo "Optional Parameters:"
+    echo "  --effect NAME          Apply a specific wallpaper effect."
+    echo "  --random [FOLDER]      Select a random image from FOLDER."
+    echo "  --notifications        Enable desktop notifications."
+    echo "  --skip-wallpaper       Will skip setting the wallpaper with awww."
+    echo "  --skip-theming         Will skip updating OS themes based on new wallpaper."
+    echo "  --skip                 Alias for \"--skip-wallpaper\"."
+    echo "  --monitor              Specify which input to apply wallpaper change (default applies to all outputs)"
+    echo "  --crop-gravity         Specify where to anchor wallpaper image in case cropping is needed (values from 'awww img --crop-gravity; default is center)"
+    echo "  --help                 Show this help message and exit."
+}
+
+send_notification() {
+    [ "$NOTIFICATIONS" = true ] || return
+    notify-send -a "shayar-wallpaper" -i "preferences-desktop-wallpaper-symbolic" "$1" "$2"
+}
+
+wait_for_awww() {
+    local max=300 count=0
+    until awww query >/dev/null 2>&1; do
+        (( count++ ))
+        if (( count >= max )); then
+            error "awww-daemon did not start within 30s"
+            exit 1
+        fi
+        sleep 0.1
+    done
+}
+
+set_wallpaper() {
+    local awww_crop_gravity_args=()
+    if [ "$SKIP_WALLPAPER" = true ]; then
+        info "Wallpaper set skipped"
+        return
+    fi
+    read -r AWWW_MINOR AWWW_PATCH <<< "$(awww --version | awk -F. '{print $2 " " $3}')"
+    (( $AWWW_MINOR > 12 || $AWWW_MINOR == 12 && $AWWW_PATCH > 0 )) \
+        && awww_crop_gravity_args=(--resize crop --crop-gravity "$AWWW_CROP_GRAVITY")
+    info "Setting wallpaper: $IMAGE_PATH${MONITOR_OUTPUT:+ on monitor $MONITOR_OUTPUT}"
+    local max=30 count=0
+    until awww img "$IMAGE_PATH" ${MONITOR_OUTPUT:+-o $MONITOR_OUTPUT} "${awww_crop_gravity_args[@]}" --transition-type "${WALLPAPER_TRANSITION:-simple}" 2>/dev/null; do
+        (( count++ ))
+        if (( count >= max )); then
+            error "Failed to set wallpaper after ${max}s (no valid outputs)"
+            return 1
+        fi
+        sleep 1
+    done
+}
+
+run_matugen() {
+    local bin="matugen"
+    [ -f "$HOME/.cargo/bin/matugen" ] && bin="$HOME/.cargo/bin/matugen"
+    [ -f "$HOME/.local/bin/matugen" ] && bin="$HOME/.local/bin/matugen"
+    command -v "$bin" >/dev/null 2>&1 || { warn "matugen not found, keeping previous colors"; return 0; }
+
+    info "Running matugen using wallpaper"
+    "$bin" image "$IMAGE_PATH" || { warn "matugen failed, keeping previous colors"; return 1; }
+    info "Matugen updated"
+}
+
+reload_waybar() {
+    if pgrep -x waybar >/dev/null; then
+        pkill -SIGUSR2 waybar
+        info "Waybar reloaded"
+    else
+        nohup bash -c "$HOME/.config/waybar/launch.sh" >/dev/null 2>&1 &
+        disown
+        info "Waybar launched"
+    fi
+}
+
+reload_swaync() {
+    sleep 0.1
+    swaync-client -rs
+    info "SwayNC refreshed"
+}
+
+reload_quickshell() {
+    if pgrep -x qs >/dev/null; then
+        qs -p "$HOME/.config/quickshell/shell.qml" ipc call theme-manager reload 2>/dev/null || true
+        info "Quickshell theme reloaded"
+    fi
+}
+
+generate_image_variants() {
+    command -v magick >/dev/null 2>&1 || { warn "ImageMagick missing, skipping image variants"; return 0; }
+    magick "$IMAGE_PATH" -resize 75% "$BLURRED_WALLPAPER"
+    local blur="${BLUR:-50x30}"
+    if [ "$blur" != "0x0" ]; then
+        magick "$BLURRED_WALLPAPER" -blur "$blur" "$BLURRED_WALLPAPER"
+    fi
+    info "Blurred wallpaper created"
+    magick "$IMAGE_PATH" -gravity Center -extent 1:1 "$SQUARE_WALLPAPER"
+    info "Square wallpaper created"
+    echo "* { current-image: url(\"$BLURRED_WALLPAPER\", height); }" > "$RASI_FILE"
+    info "Rasi file updated"
+}
+
+# ============================================================
+# Parameter Parsing
+# ============================================================
+[[ $# -eq 0 ]] && { show_help; exit 1; }
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --skip|--skip-wallpaper)
+            SKIP_WALLPAPER=true; shift ;;
+        --skip-theming)
+            SKIP_THEMING=true; shift ;;
+        --effect)
+            EFFECT="$2"; shift 2 ;;
+        --random)
+            if [[ -n "$2" && "$2" != -* ]]; then
+                RANDOM_FOLDER="$2"; shift 2
+            else
+                RAW_FOLDER="${WALLPAPER_FOLDER:-$HOME/.config/shayar/wallpapers}"
+                RANDOM_FOLDER="${RAW_FOLDER//\$HOME/$HOME}"
+                RANDOM_FOLDER="${RANDOM_FOLDER//\~/$HOME}"
+                shift 1
+            fi
+            if [[ ! -d "$RANDOM_FOLDER" ]]; then
+                error "Directory does not exist -> $RANDOM_FOLDER"; exit 1
+            fi
+            IMAGE_PATH=$(find "$RANDOM_FOLDER" -maxdepth 1 -type f \
+                \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \) -print0 | shuf -z -n 1 | tr -d '\0')
+            [[ -z "$IMAGE_PATH" ]] && { error "No valid images found in -> $RANDOM_FOLDER"; exit 1; }
+            info "Random wallpaper selected: $IMAGE_PATH" ;;
+        --notifications)
+            NOTIFICATIONS=true; shift ;;
+        --monitor)
+            MONITOR_OUTPUT="$2"; shift 2 ;;
+        --crop-gravity)
+            AWWW_CROP_GRAVITY="$2"; shift 2 ;;
+        --help)
+            show_help; exit 0 ;;
+        -*)
+            error "Unknown option: $1"; show_help; exit 1 ;;
+        *)
+            if [[ -z "$IMAGE_PATH" ]]; then
+                IMAGE_PATH="$1"
+            else
+                error "Multiple image paths provided -> $1"; exit 1
+            fi
+            shift ;;
+    esac
+done
+
+# ============================================================
+# Validation
+# ============================================================
+if [[ -z "$IMAGE_PATH" ]]; then
+    info "Using default wallpaper -> $DEFAULT_WALLPAPER"
+    IMAGE_PATH="$DEFAULT_WALLPAPER"
+fi
+
+if [[ ! -f "$IMAGE_PATH" ]]; then
+    error "Image file does not exist -> $IMAGE_PATH"; exit 1
+fi
+
+mkdir -p "$CACHE_FOLDER"
+echo "$IMAGE_PATH" > "$CACHE_FILE"
+info "Cache updated: $IMAGE_PATH"
+
+# ============================================================
+# Main
+# ============================================================
+wait_for_awww
+set_wallpaper
+run_extensions "wallpaper-change"
+if "$SKIP_THEMING"; then
+    info "Updating theming skipped"
+else
+    run_matugen
+    run_extensions "matugen-complete"
+    reload_waybar
+    reload_swaync
+    reload_quickshell
+    run_extensions "post-reload"
+    generate_image_variants &
+fi
+send_notification "Wallpaper Updated" "$(basename "$IMAGE_PATH")${MONITOR_OUTPUT:+ on output $MONITOR_OUTPUT}"
+info "Done"

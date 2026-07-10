@@ -1,0 +1,40 @@
+pkgname=shayar-dotfiles-git
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="An opinionated Hyprland design system and dotfiles suite"
+arch=('any')
+url="https://github.com/VardanRattan/shayar"
+license=('GPL3')
+depends=('hyprland' 'waybar' 'swaync' 'rofi' 'kitty' 'jq' 'matugen' 'awww-daemon' 'quickshell' 'swayosd')
+makedepends=('git')
+provides=('shayar-dotfiles')
+conflicts=('shayar-dotfiles')
+source=("git+https://github.com/VardanRattan/shayar.git")
+md5sums=('SKIP')
+
+pkgver() {
+  cd "$srcdir/shayar"
+  printf "%s.r%s.%s" "$(git describe --tags --abbrev=0 2>/dev/null || echo 0.1.0)" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+package() {
+  cd "$srcdir/shayar"
+  
+  # Install dotfiles to /usr/share/shayar
+  install -d "$pkgdir/usr/share/shayar"
+  cp -a . "$pkgdir/usr/share/shayar/"
+  
+  # Provide an executable to bootstrap the dotfiles in user home
+  install -d "$pkgdir/usr/bin"
+  cat << 'EOF' > "$pkgdir/usr/bin/shayar-install"
+#!/usr/bin/env bash
+set -euo pipefail
+echo "Installing Shayar to ~/.config/shayar..."
+mkdir -p ~/.config
+cp -r /usr/share/shayar ~/.config/shayar
+cd ~/.config/shayar
+./scripts/link.sh
+echo "Shayar installed successfully!"
+EOF
+  chmod +x "$pkgdir/usr/bin/shayar-install"
+}

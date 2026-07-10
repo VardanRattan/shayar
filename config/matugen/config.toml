@@ -1,0 +1,56 @@
+[config]
+
+[templates.kitty]
+input_path = '~/.config/matugen/templates/kitty-colors.conf'
+output_path = '~/.config/kitty/colors-matugen.conf'
+post_hook = 'pkill -SIGUSR1 kitty'
+
+[templates.hyprland]
+input_path = '~/.config/matugen/templates/hyprland-colors.conf'
+output_path = '~/.config/hypr/colors.conf'
+
+[templates.hyprland-lua]
+input_path = '~/.config/matugen/templates/hyprland-colors.lua'
+output_path = '~/.config/hypr/colors.lua'
+post_hook = 'hyprctl reload'
+
+[templates.waybar]
+input_path = '~/.config/matugen/templates/colors.css'
+output_path = '~/.config/waybar/colors.css'
+
+[templates.rofi]
+input_path = '~/.config/matugen/templates/rofi-colors.rasi'
+output_path = '~/.config/rofi/colors.rasi'
+
+[templates.gtk3]
+input_path = '~/.config/matugen/templates/gtk-colors.css'
+output_path = '~/.config/gtk-3.0/colors.css'
+
+[templates.gtk4]
+input_path = '~/.config/matugen/templates/gtk-colors.css'
+output_path = '~/.config/gtk-4.0/colors.css'
+
+[templates.swaync]
+input_path = '~/.config/matugen/templates/colors.css'
+output_path = '~/.config/swaync/colors.css'
+
+[templates.primary]
+input_path = '~/.config/matugen/templates/primary'
+output_path = '~/.config/shayar/colors/primary'
+
+[templates.secondary]
+input_path = '~/.config/matugen/templates/secondary'
+output_path = '~/.config/shayar/colors/secondary'
+
+[templates.on_surface]
+input_path = '~/.config/matugen/templates/onsurface'
+output_path = '~/.config/shayar/colors/onsurface'
+
+[templates.on_primary]
+input_path = '~/.config/matugen/templates/onprimary'
+output_path = '~/.config/shayar/colors/onprimary'
+
+[templates.quickshell]
+input_path = '~/.config/matugen/templates/quickshell-colors.json'
+output_path = '~/.config/shayar/colors/quickshell.json'
+post_hook = 'pkill -USR2 qs 2>/dev/null || true'

@@ -1,0 +1,326 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+TOKENS_FILE="${TOKENS_FILE:-$HOME/.config/shayar/themes/design-tokens.json}"
+OUT_DIR="${OUT_DIR:-$HOME/.config/shayar/themes}"
+
+query() {
+    jq -r "$1" "$TOKENS_FILE"
+}
+
+generate_css() {
+    mkdir -p "$OUT_DIR"
+    local out="$OUT_DIR/design-tokens.css"
+    {
+        echo "/* Generated from design-tokens.json — DO NOT EDIT */"
+        jq -r '
+            paths(scalars) as $p |
+            ($p | map(tostring | gsub("_"; "-") | ascii_downcase) | join("-")) as $path |
+            "@define-color dt-\($path) \(getpath($p));"
+        ' "$TOKENS_FILE"
+    } > "$out"
+    echo "Generated: $out"
+}
+
+generate_lua() {
+    local out="$OUT_DIR/design-tokens.lua"
+    {
+        echo "-- Generated from design-tokens.json -- DO NOT EDIT"
+        echo "dt = {}"
+
+        jq -r '
+            def emit(prefix):
+                to_entries[] | .key as $k |
+                if .value | type == "object" then
+                    "dt\(prefix)[\"\($k)\"] = {}",
+                    (.value | emit("\(prefix)[\"\($k)\"]"))
+                elif .value | type == "string" then
+                    (.value | gsub("\""; "\\\"")) as $escaped |
+                    "dt\(prefix)[\"\($k)\"] = \"\($escaped)\""
+                else
+                    "dt\(prefix)[\"\($k)\"] = \(.value)"
+                end;
+
+            emit("")
+        ' "$TOKENS_FILE"
+    } > "$out"
+    echo "Generated: $out"
+}
+
+generate_rasi() {
+    local out="$OUT_DIR/design-tokens.rasi"
+    {
+        echo "/* Generated from design-tokens.json -- DO NOT EDIT */"
+        echo "* {"
+
+        jq -r '
+            paths(scalars) as $p |
+            ($p | map(tostring | gsub("_"; "-")) | join("-")) as $path |
+            (getpath($p) | tostring) as $val |
+            if $p[0] == "typography" then
+                "    dt-\($path): \"\($val)\";"
+            elif ($val | test("^[0-9.-]+(px|em|%)?$") or ($val | test("^#[0-9a-fA-F]+$")) or ($val | test("^[0-9.]+$"))) then
+                "    dt-\($path): \($val);"
+            else
+                "    dt-\($path): \"\($val)\";"
+            end
+        ' "$TOKENS_FILE"
+
+        echo "}"
+    } > "$out"
+    echo "Generated: $out"
+}
+
+generate_hyprlock_conf() {
+    local out="$OUT_DIR/design-tokens-hyprlock.conf"
+    {
+        echo "# Generated from design-tokens.json -- DO NOT EDIT"
+
+        jq -r '
+            paths(scalars) as $p |
+            ($p | map(tostring | gsub("_"; "-") | ascii_downcase) | join("-")) as $path |
+            "$dt-\($path) = \(getpath($p))"
+        ' "$TOKENS_FILE"
+    } > "$out"
+    echo "Generated: $out"
+}
+
+generate_kitty_conf() {
+    local out="$OUT_DIR/design-tokens-kitty.conf"
+    {
+        echo "# Generated from design-tokens.json -- DO NOT EDIT"
+
+        jq -r '
+            .kitty | to_entries[] |
+            "\(.key) \(.value)"
+        ' "$TOKENS_FILE"
+    } > "$out"
+    echo "Generated: $out"
+}
+
+generate_gtk_settings() {
+    local out="$OUT_DIR/design-tokens-gtk.ini"
+    {
+        echo "# Generated from design-tokens.json -- DO NOT EDIT"
+
+        jq -r '
+            .gtk | to_entries[] |
+            "gtk-\(.key | gsub("_"; "-"))=\(.value)"
+        ' "$TOKENS_FILE"
+    } > "$out"
+    echo "Generated: $out"
+}
+
+generate_env() {
+    local out="$OUT_DIR/design-tokens.env"
+    {
+        echo "# Generated from design-tokens.json -- DO NOT EDIT"
+
+        jq -r '
+            paths(scalars) as $p |
+            ($p | map(tostring | ascii_upcase) | join("_")) as $path |
+            "DT_\($path)=\"\(getpath($p))\""
+        ' "$TOKENS_FILE"
+    } > "$out"
+    echo "Generated: $out"
+}
+
+generate_shayar_json() {
+    local out="$OUT_DIR/shayar.json"
+    jq '
+        { colors: (.colors | to_entries | map(
+            { key, value: {
+                dark: { color: .value },
+                default: { color: .value },
+                light: { color: .value }
+            }}
+        ) | from_entries) }
+    ' "$TOKENS_FILE" > "$out"
+    echo "Generated: $out"
+}
+
+generate_quickshell_tokens() {
+    local out="$OUT_DIR/quickshell-tokens.json"
+    mkdir -p "$(dirname "$out")"
+    jq '.quickshell // {}' "$TOKENS_FILE" > "$out"
+    echo "Generated: $out"
+}
+
+generate_rofi_font() {
+    local out="$OUT_DIR/design-tokens-rofi-font.rasi"
+    {
+        echo "/* Generated from design-tokens.json -- DO NOT EDIT */"
+        echo "configuration {"
+        echo "    font: \"$(query '.typography.rofi_font')\";"
+        echo "    icon-theme: \"$(query '.typography.icon_theme')\";"
+        echo "}"
+    } > "$out"
+    echo "Generated: $out"
+}
+
+generate_waybar_css() {
+    local src="${XDG_CONFIG_HOME:-$HOME/.config}/waybar/themes/shayar/style.template.css"
+    local dst="$OUT_DIR/waybar-style.css"
+    if [ -f "$src" ]; then
+        cp "$src" "$dst"
+        local sed_script
+        sed_script=$(mktemp)
+        jq -r '
+            paths(scalars) as $p |
+            ($p | map(tostring | ascii_upcase) | join("_")) as $path |
+            "s|@DT_\($path)@|\(getpath($p))|g"
+        ' "$TOKENS_FILE" > "$sed_script"
+        sed -i -f "$sed_script" "$dst"
+        rm -f "$sed_script"
+        echo "Generated: $dst"
+    fi
+
+    # Generate swaync CSS
+    for component in notifications control_center; do
+        local sway_src="${XDG_CONFIG_HOME:-$HOME/.config}/swaync/themes/glass/${component}.template.css"
+        local sway_dst="$OUT_DIR/swaync-${component}.css"
+        if [ -f "$sway_src" ]; then
+            local sway_sed_script
+            sway_sed_script=$(mktemp)
+            jq -r '
+                paths(scalars) as $p |
+                ($p | map(tostring | ascii_upcase) | join("_")) as $path |
+                "s|@DT_\($path)@|\(getpath($p))|g"
+            ' "$TOKENS_FILE" > "$sway_sed_script"
+            sed -f "$sway_sed_script" "$sway_src" > "$sway_dst"
+            rm -f "$sway_sed_script"
+            echo "Generated: $sway_dst"
+        fi
+    done
+}
+
+run_matugen() {
+    local bin="matugen"
+    [ -f "$HOME/.cargo/bin/matugen" ] && bin="$HOME/.cargo/bin/matugen"
+    [ -f "$HOME/.local/bin/matugen" ] && bin="$HOME/.local/bin/matugen"
+    if ! command -v "$bin" >/dev/null 2>&1; then
+        echo "Warning: matugen not found. Skipping color generation."
+        return 0
+    fi
+    local cache_file="$HOME/.cache/shayar/hyprland-dotfiles/current_wallpaper"
+    if [ -f "$cache_file" ] && [ -f "$(cat "$cache_file")" ]; then
+        echo "Running matugen from cached wallpaper..."
+        "$bin" image "$(cat "$cache_file")"
+    else
+        echo "Running matugen from static palette (no cached wallpaper)..."
+        "$bin" json "$HOME/.config/shayar/themes/shayar.json"
+    fi
+    echo "Matugen complete"
+}
+
+verify() {
+    local tmp rc=0
+    tmp=$(mktemp -d)
+    local saved="$OUT_DIR"
+    OUT_DIR="$tmp"
+    generate_css >/dev/null
+    generate_lua >/dev/null
+    generate_rasi >/dev/null
+    generate_env >/dev/null
+    generate_hyprlock_conf >/dev/null
+    generate_kitty_conf >/dev/null
+    generate_gtk_settings >/dev/null
+    generate_shayar_json >/dev/null
+    OUT_DIR="$saved"
+
+    for f in design-tokens.css design-tokens.lua design-tokens.rasi design-tokens-rofi-font.rasi waybar-style.css design-tokens.env design-tokens-hyprlock.conf design-tokens-kitty.conf design-tokens-gtk.ini shayar.json quickshell-tokens.json; do
+        if ! diff -q "$tmp/$f" "$saved/$f" >/dev/null 2>&1; then
+            echo "DRIFT: $f is out of sync with design-tokens.json"
+            rc=1
+        fi
+    done
+    rm -rf "$tmp"
+    if [ "$rc" -eq 0 ]; then
+        echo "OK: all token files in sync with design-tokens.json"
+    else
+        echo "FAIL: token files drifted. Run: shayar-design-tokens generate"
+    fi
+    return "$rc"
+}
+
+doctor() {
+    local rc=0
+    echo "== Shayar doctor =="
+    for d in matugen awww-daemon swayosd-server wl-paste cliphist fzf jq gum; do
+        if command -v "$d" >/dev/null 2>&1; then
+            echo "  [ok]      $d"
+        else
+            echo "  [MISSING] $d"
+            rc=1
+        fi
+    done
+    for f in design-tokens.css design-tokens.lua design-tokens.rasi design-tokens.env design-tokens-hyprlock.conf design-tokens-kitty.conf design-tokens-gtk.ini; do
+        if [ -s "$OUT_DIR/$f" ]; then
+            echo "  [ok]      $f"
+        else
+            echo "  [MISSING] $f"
+            rc=1
+        fi
+    done
+    local lst="$HOME/.config/shayar/themes/glass/themed.lst"
+    if [ -f "$lst" ]; then
+        while read -r target src; do
+            [ -z "$target" ] && continue
+            case "$target" in \#*) continue;; esac
+            local p="${XDG_CONFIG_HOME:-$HOME/.config}/$target"
+            if [ -e "$p" ]; then
+                echo "  [ok]      overlay $target"
+            else
+                echo "  [BROKEN]  overlay $target (-> $p)"
+                rc=1
+            fi
+        done < "$lst"
+    fi
+    if [ "$rc" -eq 0 ]; then echo "doctor: OK"; else echo "doctor: issues found"; fi
+    return "$rc"
+}
+
+case "${1:-}" in
+    generate)
+        generate_css
+        generate_lua
+        generate_rasi
+        generate_env
+        generate_hyprlock_conf
+        generate_kitty_conf
+        generate_gtk_settings
+        generate_shayar_json
+        generate_quickshell_tokens
+        generate_rofi_font
+        generate_waybar_css
+        # Sync to hypr/ for require("design-tokens")
+        cp "$OUT_DIR/design-tokens.lua" "${XDG_CONFIG_HOME:-$HOME/.config}/hypr/design-tokens.lua" 2>/dev/null || true
+        echo "Synced: design-tokens.lua → hypr/design-tokens.lua"
+        if [ "${2:-}" = "--with-colors" ]; then
+            run_matugen
+        fi
+        ;;
+    get)
+        if [ -z "${2:-}" ]; then
+            echo "Usage: $0 get <json-path>"
+            echo "Example: $0 get .colors.primary"
+            exit 1
+        fi
+        query "$2"
+        ;;
+    verify)
+        verify
+        ;;
+    doctor)
+        doctor
+        ;;
+    *)
+        echo "Usage: $0 {generate [--with-colors] | verify | doctor | get <path>}"
+        echo "  generate         Generate token files from design-tokens.json"
+        echo "  generate --with-colors  Same + run matugen to regenerate all colors.*"
+        echo "  verify           Check generated token files are in sync (CI-safe)"
+        echo "  doctor           Check deps, generated files, and theme overlays"
+        echo "  get              Query a specific value (e.g. .colors.primary)"
+        exit 1
+        ;;
+esac

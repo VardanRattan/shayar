@@ -1,0 +1,208 @@
+/*
+#  ____        __ _  
+# |  _ \ ___  / _(_) 
+# | |_) / _ \| |_| | 
+# |  _ < (_) |  _| | 
+# |_| \_\___/|_| |_| 
+#                    
+# by Stephan Raabe (2023) 
+# Modified by Shayar
+# ----------------------------------------------------- 
+*/
+
+/* ---- Configuration ---- */
+configuration {
+    modi:                       "drun,filebrowser,window,run";
+
+    show-icons:                 true;
+
+    display-drun:               " ";
+    display-run:                " ";
+    display-filebrowser:        " ";
+    display-window:             " ";
+    drun-display-format:        "{name}";
+    hover-select:               false;
+    me-select-entry:            "";
+    me-accept-entry:            "MousePrimary";
+    window-format:              "{w} · {c} · {t}";
+    click-to-exit:              true;
+    close-on-delete:            true;
+    kb-cancel:                  "Escape,MousePrimary";    
+}
+
+/* ---- Load design tokens ---- */
+@import "~/.config/shayar/themes/design-tokens.rasi"
+@import "~/.config/shayar/themes/design-tokens-rofi-font.rasi"
+
+// Main Window //
+window {
+    height:                      @dt-spacing-rofi-window-height;
+    width:                       @dt-spacing-rofi-window-width;
+    transparency:                "real";
+    fullscreen:                  false;
+    enabled:                     true;
+    cursor:                      "default";
+    spacing:                     0em;
+    padding:                     0em;
+    border:                      @dt-spacing-rofi-border-width;
+    border-color:                @dt-colors-outline-variant;
+    border-radius:               @dt-spacing-rofi-border-radius;
+    background-color:            transparent;
+}
+
+mainbox {
+    enabled:                     true;
+    spacing:                     0em;
+    padding:                     0em;
+    orientation:                 vertical;
+    children:                    [ "inputbar" , "listbox" ];
+    background-color:            rgba(18, 19, 27, 0.65); /* Fallback for blur */
+}
+
+// Inputs //
+inputbar {
+    enabled:                     true;
+    margin:                      @dt-spacing-rofi-padding;
+    padding:                     15px;
+    children:                    [ "textbox-prompt-colon", "entry", "mode-switcher" ];
+    border-radius:               @dt-spacing-rofi-list-radius;
+    background-color:            @dt-colors-surface-container-lowest;
+    border:                      1px;
+    border-color:                @dt-colors-surface-container-highest;
+}
+
+textbox-prompt-colon {
+    enabled:                     true;
+    expand:                      false;
+    str:                         "  ";
+    padding:                     15px 15px 0 0;
+    text-color:                  @dt-colors-primary;
+    background-color:            transparent;
+}
+
+entry {
+    enabled:                     true;
+    spacing:                     1em;
+    padding:                     15px 0 0 0;
+    text-color:                  @dt-colors-on-surface;
+    cursor:                      text;
+    placeholder:                 "Launch Apps & Find Files...";
+    background-color:            transparent;
+    placeholder-color:           @dt-colors-on-surface-variant;
+}
+
+// Modes //
+mode-switcher {
+    orientation:                 horizontal;
+    enabled:                     true;
+    spacing:                     10px;
+    background-color:            transparent;
+}
+
+button {
+    padding:                     10px 15px;
+    border-radius:               @dt-spacing-rofi-element-radius;
+    border:                      0;    
+    cursor:                      pointer;
+    background-color:            transparent;
+    text-color:                  @dt-colors-on-surface-variant;
+}
+
+button selected {
+    background-color:            @dt-colors-primary-container;
+    text-color:                  @dt-colors-on-primary-container;
+}
+
+// Lists //
+listbox {
+    padding:                     @dt-spacing-rofi-padding;
+    spacing:                     0em;
+    orientation:                 horizontal;
+    children:                    [ "listview" ];
+    background-color:            transparent;
+}
+
+listview {
+    padding:                     0;
+    spacing:                     15px;
+    enabled:                     true;
+    columns:                     4;
+    lines:                       4;
+    cycle:                       true;
+    dynamic:                     true;
+    scrollbar:                   true;
+    layout:                      vertical;
+    reverse:                     false;
+    fixed-height:                true;
+    fixed-columns:               true;
+    cursor:                      "default";
+    background-color:            transparent;
+    text-color:                  @dt-colors-on-surface;
+}
+
+scrollbar {
+    handle-width:                4px;
+    handle-color:                @dt-colors-primary;
+    border-radius:               4px;
+    background-color:            @dt-colors-surface-container;
+}
+
+// Elements //
+element {
+    enabled:                     true;
+    orientation:                 vertical;
+    spacing:                     10px;
+    padding:                     15px;
+    cursor:                      pointer;
+    background-color:            transparent;
+    text-color:                  @dt-colors-on-surface;
+    border-radius:               @dt-spacing-rofi-element-radius;
+}
+
+element selected.normal {
+    background-color:            @dt-colors-primary-container;
+    text-color:                  @dt-colors-on-primary-container;
+    border:                      1px;
+    border-color:                @dt-colors-primary;
+}
+
+element normal.normal {
+    background-color:            inherit;
+    text-color:                  inherit;
+}
+
+element alternate.normal {
+    background-color:            inherit;
+    text-color:                  inherit;
+}
+
+element-icon {
+    size:                        4em;
+    cursor:                      inherit;
+    text-color:                  inherit;
+}
+
+element-text {
+    vertical-align:              0.5;
+    horizontal-align:            0.5;
+    cursor:                      inherit;
+    background-color:            transparent;
+    text-color:                  inherit;
+}
+
+// Error message //
+error-message {
+    text-color:                  @dt-colors-on-error-container;
+    background-color:            @dt-colors-error-container;
+    text-transform:              capitalize;
+    children:                    [ "textbox" ];
+    border-radius:               @dt-spacing-rofi-border-radius;
+    padding:                     20px;
+}
+
+textbox {
+    text-color:                  inherit;
+    background-color:            inherit;
+    vertical-align:              0.5;
+    horizontal-align:            0.5;
+}

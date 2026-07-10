@@ -1,0 +1,5 @@
+/* Generated from design-tokens.json -- DO NOT EDIT */
+configuration {
+    font: "Fira Sans 11";
+    icon-theme: "Tela-circle-dracula";
+}

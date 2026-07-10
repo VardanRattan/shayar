@@ -1,0 +1,55 @@
+@import '../../colors.css';
+
+* {
+  font-size: @DT_TYPOGRAPHY_UI_SIZE@;
+  font-weight: 900;
+  font-family: "@DT_TYPOGRAPHY_UI_SEMIBOLD@", "Font Awesome 7 Free",
+    "Font Awesome 7 Brands", "Font Awesome 6 Free", "Font Awesome 6 Brands",
+    FontAwesome;
+  transition: 200ms;
+}
+
+.floating-notifications.background .notification-row .notification-background .notification {
+  background-color: @surface;
+  border-radius: @DT_SPACING_SWAYNC_BORDER_RADIUS@px;
+  background: radial-gradient(circle at 55% -80%, @primary, alpha(@scrim, 0.6)) padding-box,
+    linear-gradient(transparent, alpha(@on_primary, 0.5)) padding-box;
+  border: 1px solid @on_surface;
+  margin: 10px 18px 10px 10px;
+  box-shadow: 1px 1px 5px 1px @shadow;
+}
+
+.floating-notifications.background .notification-row .notification-background .notification.critical {
+  background: radial-gradient(circle at 55% -80%, @primary, alpha(@scrim, 0.6)) padding-box,
+    linear-gradient(transparent, alpha(@error, 0.5)) padding-box;
+}
+
+.floating-notifications.background .notification-row .notification-background .close-button {
+  background: transparent;
+  background-color: alpha(@inverse_surface, 0.5);
+  border-radius: 7px;
+  color: @fontcolor;
+  padding: @DT_SPACING_SWAYNC_PADDING_MEDIUM@px;
+}
+
+.floating-notifications.background .notification-row .notification-background .close-button:hover {
+  background-color: @primary;
+  border-radius: @DT_SPACING_SWAYNC_BORDER_RADIUS@px;
+}
+
+.summary {
+  font-weight: 800;
+  font-size: 1.15rem;
+  padding: @DT_SPACING_SWAYNC_MARGIN_SMALL@px @DT_SPACING_SWAYNC_PADDING_MEDIUM@px;
+}
+
+.body {
+  padding: @DT_SPACING_SWAYNC_MARGIN_SMALL@px @DT_SPACING_SWAYNC_PADDING_MEDIUM@px;
+  font-size: 0.8rem;
+}
+
+.notification.low progress,
+.notification.normal progress,
+.notification.critical progress {
+  background-color: @primary;
+}

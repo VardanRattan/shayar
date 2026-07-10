@@ -1,0 +1,147 @@
+{
+    // General Settings
+    "layer": "top",
+    "position": "top",
+    "margin-top": @DT_SPACING_WAYBAR_MARGIN_TOP@,
+    "margin-bottom": 0,
+    "margin-left": @DT_SPACING_WAYBAR_MARGIN_LEFT@,
+    "margin-right": @DT_SPACING_WAYBAR_MARGIN_RIGHT@,
+    "spacing": @DT_SPACING_WAYBAR_SPACING@,
+    
+    // Modules Left
+    "modules-left": [
+        "clock"
+    ],
+    
+    // Modules Center
+    "modules-center": [
+        "group/center-pill"
+    ],
+    
+    // Modules Right    
+    "modules-right": [
+        "group/right-pill"
+    ],
+
+    // Define Groups
+    "group/center-pill": {
+        "orientation": "horizontal",
+        "modules": [
+            "hyprland/workspaces"
+        ]
+    },
+
+    "group/right-pill": {
+        "orientation": "horizontal",
+        "modules": [
+            "pulseaudio",
+            "bluetooth",
+            "network",
+            "battery",
+            "custom/divider",
+            "custom/notification",
+            "custom/exit"
+        ]
+    },
+
+    // Module Overrides for Shayar Aesthetics
+    "clock": {
+        "interval": 1,
+        "format": "<span font_desc='@DT_TYPOGRAPHY_WAYBAR_PANGO_FONT@ @DT_TYPOGRAPHY_WAYBAR_FONT_SIZE@'>{0:%H:%M:%S}</span>  <span color='@outline'>│</span>  <span font_desc='Fira Sans @DT_TYPOGRAPHY_UI_SIZE@' color='@outline'>{0:%b %d, %a}</span>",
+        "tooltip": false,
+        "on-click": "~/.config/shayar/bin/shayar-calendar-toggle"
+    },
+
+    "pulseaudio": {
+        "format": "{icon}",
+        "format-bluetooth": "{icon}",
+        "format-muted": "",
+        "format-icons": {
+            "headphone": "",
+            "hands-free": "",
+            "headset": "",
+            "phone": "",
+            "portable": "",
+            "car": "",
+            "default": ["", "", ""]
+        },
+        "tooltip-format": "Volume: {volume}%",
+        "on-click": "~/.config/shayar/bin/shayar-vol-toggle"
+    },
+
+    "bluetooth": {
+        "format": "",
+        "format-disabled": "󰂲",
+        "format-off": "󰂲",
+        "format-connected": "󰂱 {num_connections}",
+        "format-no-controller": "󰂲",
+        "tooltip-format": "Bluetooth: {status}",
+        "on-click": "~/.config/shayar/bin/shayar-bt-toggle"
+    },
+
+    "network": {
+        "format-wifi": "",
+        "format-ethernet": "",
+        "format-disconnected": "⚠",
+        "tooltip-format": "Network: {essid} ({signalStrength}%)",
+        "on-click": "~/.config/shayar/bin/shayar-net-toggle",
+        "on-click-right": "~/.config/shayar/scripts/shayar-toggle-nmapplet toggle"
+    },
+
+    "battery": {
+        "format": "{capacity}% <span font_desc='@DT_TYPOGRAPHY_WAYBAR_PANGO_FONT@ @DT_TYPOGRAPHY_WAYBAR_ICON_FONT_SIZE@' rise='-2000'>{icon}</span>",
+        "format-charging": "{capacity}% <span font_desc='@DT_TYPOGRAPHY_WAYBAR_PANGO_FONT@ @DT_TYPOGRAPHY_WAYBAR_ICON_FONT_SIZE@' rise='-2000'></span>",
+        "format-plugged": "{capacity}% <span font_desc='@DT_TYPOGRAPHY_WAYBAR_PANGO_FONT@ @DT_TYPOGRAPHY_WAYBAR_ICON_FONT_SIZE@' rise='-2000'></span>",
+        "format-alt": "{capacity}% <span font_desc='@DT_TYPOGRAPHY_WAYBAR_PANGO_FONT@ @DT_TYPOGRAPHY_WAYBAR_ICON_FONT_SIZE@' rise='-2000'>{icon}</span>",
+        "format-icons": ["", "", "", "", ""],
+        "tooltip-format": "Battery: {capacity}% {time}"
+    },
+
+    "custom/notification": {
+        "format": "{icon}",
+        "format-icons": {
+            "notification": "<span color='@error' size='small' rise='5000'>●</span>",
+            "none": "",
+            "dnd-notification": "<span color='@error' size='small' rise='5000'>●</span>",
+            "dnd-none": "",
+            "inhibited-notification": "<span color='@error' size='small' rise='5000'>●</span>",
+            "inhibited-none": "",
+            "dnd-inhibited-notification": "<span color='@error' size='small' rise='5000'>●</span>",
+            "dnd-inhibited-none": ""
+        },
+        "return-type": "json",
+        "escape": true,
+        "exec-if": "which swaync-client",
+        "exec": "swaync-client -swb",
+        "on-click": "swaync-client -t -sw",
+        "on-click-right": "swaync-client -d -sw"
+    },
+
+    "hyprland/workspaces": {
+        "on-scroll-down": "hyprctl dispatch workspace e+1",
+        "on-scroll-up": "hyprctl dispatch workspace e-1",
+        "on-click": "activate",
+        "active-only": false,
+        "all-outputs": true,
+        "format": "{icon}",
+        "format-icons": {
+            "urgent": "●",
+            "active": "●",
+            "default": "●"
+        },
+        "persistent-workspaces": {
+            "*": 5
+        }
+    },
+
+    "custom/divider": {
+        "format": "│",
+        "tooltip": false
+    },
+
+    "custom/exit": {
+        "format": "",
+        "on-click": "~/.config/shayar/bin/shayar-power-toggle",
+        "tooltip-format": "Open Power Menu"
+    }
+}

@@ -1,0 +1,12 @@
+.local/
+config/shayar/extensions/enabled/
+config/shayar/extensions/user/
+overrides/
+config/gtk-3.0/colors.css
+config/gtk-4.0/colors.css
+*.log
+*.bak
+__pycache__/
+*.pyc
+clients.txt
+test-kitty.sh

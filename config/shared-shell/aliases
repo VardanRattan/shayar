@@ -1,0 +1,47 @@
+# -----------------------------------------------------
+# ALIASES — shared by bash and zsh
+# -----------------------------------------------------
+
+# -----------------------------------------------------
+# General
+# -----------------------------------------------------
+alias ..='cd ..'
+alias c='clear'
+alias nf='fastfetch --config ~/.config/fastfetch/config.jsonc 2>/dev/null || neofetch'
+alias ls='eza -a --icons=always'
+alias ll='eza -al --icons=always'
+alias lt='eza -a --tree --level=1 --icons=always'
+alias shutdown='~/.config/shayar/scripts/shayar-power -p'
+alias v='$EDITOR'
+alias vim='$EDITOR'
+alias wifi='nmtui'
+alias apps='~/.config/shayar/bin/shayar-apps'
+alias screenshot='~/.config/shayar/bin/shayar-screenshot'
+alias updates='~/.config/shayar/scripts/shayar-install-system-updates'
+alias filemanager='~/.config/shayar/settings/filemanager'
+alias autostart='~/.config/shayar/scripts/shayar-autostart'
+alias lock='hyprlock'
+alias clock='tty-clock'
+alias system='~/.config/shayar/settings/systemmonitor'
+alias quick='~/.config/shayar/bin/shayar-quicklinks'
+alias wallpaper='~/.config/shayar/bin/shayar-wallpaper'
+alias shayar-hyprland='flatpak run com.shayar.hyprlandsettings'
+
+# -----------------------------------------------------
+# Git
+# -----------------------------------------------------
+alias gs="git status"
+alias ga="git add"
+alias gc="git commit -m"
+alias gp="git push"
+alias gpl="git pull"
+alias gst="git stash"
+alias gsp="git stash; git pull"
+alias gfo="git fetch origin"
+alias gcheck="git checkout"
+alias gcredential="git config credential.helper store"
+
+# -----------------------------------------------------
+# System
+# -----------------------------------------------------
+alias update-grub='sudo grub-mkconfig -o /boot/grub/grub.cfg'

@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# shayar-bt-popup
+# Spawns bluetuith (or fallback) in a specialized floating Kitty window
+
+# If it's already running, kill it (toggle behavior)
+if pgrep -f "kitty --class shayar-popup-bt" >/dev/null; then
+    pkill -f "kitty --class shayar-popup-bt"
+    exit 0
+fi
+
+# Close any other popups to prevent overlap
+pkill -f "kitty --class shayar-popup-net" || true
+
+# Choose a terminal bluetooth manager
+if command -v bluetuith >/dev/null 2>&1; then
+    EXEC_CMD="bluetuith"
+else
+    # Fallback to bluetoothctl if bluetuith is not installed
+    EXEC_CMD="bluetoothctl"
+fi
+
+# Apply temporary window rules directly via hyprctl
+hyprctl --batch "\
+keyword windowrulev2 float,class:^(shayar-popup-bt)$;\
+keyword windowrulev2 pin,class:^(shayar-popup-bt)$;\
+keyword windowrulev2 size 400 500,class:^(shayar-popup-bt)$;\
+keyword windowrulev2 move 100%-480 60,class:^(shayar-popup-bt)$;\
+keyword windowrulev2 animation slide,class:^(shayar-popup-bt)$"
+
+# Execute in a popup class
+exec kitty --class shayar-popup-bt -e "$EXEC_CMD"

@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# shayar-init-overrides — scaffold user override files for the layered config.
+#
+# Shayar reads code-level overrides from ~/.config/overrides/ (see
+# config/shayar/docs/overrides.md). This copies the *current* shipped files
+# into ~/.config/overrides/ so you can edit them without touching the repo
+# (no merge conflicts on `git pull`).
+#
+# Usage: shayar-init-overrides
+
+
+CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}"
+OV="$CONFIG_HOME/overrides"
+
+# Files that support layered overrides (code-level: Lua variant subfiles +
+# the waybar theme config). Fixed-path tools (swaync config.json, kitty
+# custom.conf) are documented as out-of-scope in overrides.md.
+FILES=(
+    hypr/conf/keybindings/default.lua
+    hypr/conf/windows/default.lua
+    hypr/conf/layouts/default.lua
+    hypr/conf/monitors/default.lua
+    hypr/conf/decorations/default.lua
+    hypr/conf/animations/default.lua
+    hypr/conf/workspaces/default.lua
+    waybar/themes/shayar/config
+)
+
+for f in "${FILES[@]}"; do
+    src="$CONFIG_HOME/$f"
+    dst="$OV/$f"
+    [ -e "$src" ] || { echo "skip (missing): $f"; continue; }
+    if [ -e "$dst" ]; then
+        echo "exists: $f"
+        continue
+    fi
+    mkdir -p "$(dirname "$dst")"
+    cp "$src" "$dst"
+    echo "created override: $dst"
+done
+
+echo
+echo "Done. Edit files under $OV to customize; they take effect on next reload."

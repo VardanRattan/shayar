@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# shayar-wifi-popup
+# Spawns nmtui in a specialized floating Kitty window that acts like a Quickshell applet
+
+# If it's already running, kill it (toggle behavior)
+if pgrep -f "kitty --class shayar-popup-net" >/dev/null; then
+    pkill -f "kitty --class shayar-popup-net"
+    exit 0
+fi
+
+# Close any other popups to prevent overlap
+pkill -f "kitty --class shayar-popup-bt" || true
+
+# Apply temporary window rules directly via hyprctl
+hyprctl --batch "\
+keyword windowrulev2 float,class:^(shayar-popup-net)$;\
+keyword windowrulev2 pin,class:^(shayar-popup-net)$;\
+keyword windowrulev2 size 400 500,class:^(shayar-popup-net)$;\
+keyword windowrulev2 move 100%-430 60,class:^(shayar-popup-net)$;\
+keyword windowrulev2 animation slide,class:^(shayar-popup-net)$"
+
+# Execute nmtui in a popup class
+exec kitty --class shayar-popup-net -e nmtui

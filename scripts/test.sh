@@ -175,7 +175,7 @@ IPC_CALLS=$(grep -roE 'qs .* ipc call [a-zA-Z0-9_-]+ [a-zA-Z0-9_-]+' config/shay
 
 if [ -n "$IPC_CALLS" ]; then
     while read -r target method; do
-        target_found=$(grep -rl "ipcTarget: \"$target\"" config/quickshell/ || true)
+        target_found=$(grep -rl "target: \"$target\"" config/quickshell/ || true)
         if [ -n "$target_found" ]; then
             pass "QML IPC target '$target' exists"
             method_found=0

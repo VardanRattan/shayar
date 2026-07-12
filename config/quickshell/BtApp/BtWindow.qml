@@ -1,20 +1,101 @@
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
+import Quickshell.Io
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Effects
 
-import "../shared/BaseState.qml" as BaseState
-import "../shared/GlassPanel.qml" as GlassPanel
-
 PanelWindow {
     id: root
 
-    function reload(): void { state.reload() }
+    function reload(): void {
+        colorReader.running = false
+        colorReader.running = true
+        tokenReader.running = false
+        tokenReader.running = true
+    }
 
-    property alias isOpen: state.isOpen
-    property bool ready: state.ready
+    WlrLayershell.layer: WlrLayer.Overlay
+    exclusionMode: WlrLayershell.Ignore
+
+    implicitWidth: root.ready ? root.tokens.panel_width : 180
+    implicitHeight: Math.min(btColumn.implicitHeight + 32, Screen.height * 0.75)
+    color: "transparent"
+    anchors.right: true
+    anchors.top: true
+
+    HyprlandFocusGrab {
+        windows: [root]
+        active: root.isOpen
+        onCleared: { if (root.isOpen) root.isOpen = false }
+    }
+
+    Shortcut {
+        sequence: "Escape"
+        onActivated: { if (root.isOpen) root.isOpen = false }
+    }
+
+    property bool isOpen: false
+    property bool ready: false
+    property bool colorsLoaded: false
+    property bool tokensLoaded: false
+
+    onIsOpenChanged: {
+        if (isOpen && !btScan.running) {
+            btScan.running = true
+        } else if (!isOpen) {
+            btScan.running = false
+        }
+    }
+
+    visible: ready && (isOpen || root.slideOffset !== 120)
+
+    property int slideOffset: isOpen ? 0 : 120
+
+    Behavior on slideOffset {
+        NumberAnimation {
+            id: slideAnim
+            duration: 350
+            easing.type: Easing.OutQuint
+        }
+    }
+
+    margins { right: root.slideOffset; top: root.tokens.calendar_margin_top }
+
+    property QtObject colors: QtObject {
+        property color background: "#12131b"
+        property color primary: "#acc7ff"
+        property color on_primary: "#062f64"
+        property color on_surface: "#e4e1ee"
+        property color surface_dim: "#12131b"
+        property color surface_container: "#1f1f28"
+        property color surface_container_high: "#292932"
+        property color surface_bright: "#393842"
+        property color shadow: "#000000"
+        property color on_surface_variant: "#c4c6d1"
+
+        function updateFromJson(jsonString) {
+            try {
+                var c = JSON.parse(jsonString)
+                if (!c || Object.keys(c).length === 0) return false
+                if (c.background) background = c.background
+                if (c.primary) primary = c.primary
+                if (c.on_primary) on_primary = c.on_primary
+                if (c.on_surface) on_surface = c.on_surface
+                if (c.surface_dim) surface_dim = c.surface_dim
+                if (c.surface_container) surface_container = c.surface_container
+                if (c.surface_container_high) surface_container_high = c.surface_container_high
+                if (c.surface_bright) surface_bright = c.surface_bright
+                if (c.shadow) shadow = c.shadow
+                if (c.on_surface_variant) on_surface_variant = c.on_surface_variant
+                return true
+            } catch (e) {
+                console.log("Failed to parse quickshell colors: " + e)
+                return false
+            }
+        }
+    }
 
     property QtObject tokens: QtObject {
         property int panel_width: 320
@@ -72,59 +153,33 @@ PanelWindow {
         }
     }
 
-    BaseState.BaseState {
-        id: state
-        parent: root
-        tokens: root.tokens
-        ipcTarget: "bt"
-    }
-
-    WlrLayershell.layer: WlrLayer.Overlay
-    exclusionMode: WlrLayershell.Ignore
-
-    implicitWidth: root.ready ? root.tokens.panel_width : 180
-    implicitHeight: Math.min(btColumn.implicitHeight + 32, Screen.height * 0.75)
-    color: "transparent"
-    anchors.right: true
-    anchors.top: true
-
-    HyprlandFocusGrab {
-        windows: [root]
-        active: state.isOpen
-        onCleared: { if (state.isOpen) state.isOpen = false }
-    }
-
-    Shortcut {
-        sequence: "Escape"
-        onActivated: { if (state.isOpen) state.isOpen = false }
-    }
-
-    onIsOpenChanged: {
-        if (state.isOpen && !btScan.running) {
-            selectedIndex = -1
-            btScan.running = true
-            btColumn.forceActiveFocus()
-        } else if (!state.isOpen) {
-            btScan.running = false
+    Process {
+        id: colorReader
+        command: ["cat", Quickshell.env("HOME") + "/.config/shayar/colors/quickshell.json"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.colorsLoaded = root.colors.updateFromJson(this.text.trim())
+                root.ready = root.colorsLoaded && root.tokensLoaded
+                colorReader.running = false
+            }
         }
+        running: true
     }
 
-    visible: state.ready && (state.isOpen || root.slideOffset !== 120)
-
-    property int slideOffset: state.isOpen ? 0 : 120
-
-    Behavior on slideOffset {
-        NumberAnimation {
-            id: slideAnim
-            duration: 350
-            easing.type: Easing.OutQuint
+    Process {
+        id: tokenReader
+        command: ["cat", Quickshell.env("HOME") + "/.config/shayar/colors/quickshell-tokens.json"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.tokensLoaded = root.tokens.updateFromJson(this.text.trim())
+                root.ready = root.colorsLoaded && root.tokensLoaded
+                tokenReader.running = false
+            }
         }
+        running: true
     }
-
-    margins { right: root.slideOffset; top: root.tokens.calendar_margin_top }
 
     property bool btEnabled: true
-    property int selectedIndex: -1
 
     ListModel { id: btModel }
 
@@ -164,30 +219,52 @@ PanelWindow {
         })
     }
 
-    function activateSelected() {
-        if (selectedIndex < 0 || selectedIndex >= btModel.count) return
-        var item = btModel.get(selectedIndex)
-        if (item.connected) {
-            Quickshell.execDetached(["bash", "-c", "bluetoothctl disconnect " + item.mac])
-        } else if (item.paired) {
-            Quickshell.execDetached(["bash", "-c", "bluetoothctl connect " + item.mac])
-        } else {
-            Quickshell.execDetached(["bash", "-c", "bluetoothctl pair " + item.mac + " && bluetoothctl trust " + item.mac + " && bluetoothctl connect " + item.mac])
-        }
-        btScan.running = true
-    }
-
     Item {
         id: panelContainer
         width: root.tokens.panel_width
-        height: Math.min(btColumn.implicitHeight + 32, Screen.height * 0.75)
+        height: btColumn.implicitHeight + 32
         anchors.top: parent.top
         anchors.right: parent.right
 
-        GlassPanel.GlassPanel {
+        Rectangle {
+            id: panelBg
             anchors.fill: parent
-            colors: state.colors
-            tokens: root.tokens
+            radius: root.tokens.panel_radius
+            color: Qt.rgba(root.colors.surface_container.r, root.colors.surface_container.g, root.colors.surface_container.b, root.tokens.panel_bg_alpha)
+
+            layer.enabled: true
+            layer.effect: MultiEffect {
+                blurEnabled: true
+                blur: root.tokens.blur_strength
+                saturation: 0.0
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                radius: parent.radius
+                gradient: Gradient {
+                    orientation: Gradient.Vertical
+                    GradientStop { position: 0.0; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_top_alpha) }
+                    GradientStop { position: 0.3; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_mid_alpha) }
+                    GradientStop { position: 1.0; color: "transparent" }
+                }
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 1
+                radius: parent.radius - 1
+                color: "transparent"
+                border.color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.border_alpha)
+                border.width: root.tokens.border_width
+            }
+        }
+
+        RectangularShadow {
+            anchors.fill: panelBg
+            radius: panelBg.radius
+            blur: 24
+            color: Qt.rgba(root.colors.shadow.r, root.colors.shadow.g, root.colors.shadow.b, root.tokens.shadow_alpha)
         }
 
         ColumnLayout {
@@ -195,33 +272,22 @@ PanelWindow {
             anchors.fill: parent
             anchors.margins: 16
             spacing: 8
-            focus: true
 
-            Keys.onUpPressed: {
-                if (selectedIndex <= 0) selectedIndex = btModel.count - 1
-                else selectedIndex--
-            }
-            Keys.onDownPressed: {
-                if (selectedIndex >= btModel.count - 1) selectedIndex = 0
-                else selectedIndex++
-            }
-            Keys.onReturnPressed: activateSelected()
-            Keys.onEnterPressed: activateSelected()
-
+            // Header row
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 8
 
                 Text {
                     text: "\uF1AD"
-                    color: state.colors.primary
+                    color: root.colors.primary
                     font.pixelSize: root.tokens.icon_size + 4
                     font.family: "Symbols Nerd Font Mono"
                 }
 
                 Text {
                     text: "Bluetooth"
-                    color: state.colors.on_surface
+                    color: root.colors.on_surface
                     font.pixelSize: root.tokens.font_size_label + 2
                     font.weight: Font.DemiBold
                     Layout.fillWidth: true
@@ -230,15 +296,15 @@ PanelWindow {
                 Rectangle {
                     width: 32; height: 32; radius: 16
                     color: mouseAreaBtToggle.containsMouse
-                        ? Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, 0.2)
-                        : Qt.rgba(state.colors.surface_container_high.r, state.colors.surface_container_high.g, state.colors.surface_container_high.b, 0.6)
-                    border.color: Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, mouseAreaBtToggle.containsMouse ? root.tokens.hover_border_alpha : 0)
+                        ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.2)
+                        : Qt.rgba(root.colors.surface_container_high.r, root.colors.surface_container_high.g, root.colors.surface_container_high.b, 0.6)
+                    border.color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, mouseAreaBtToggle.containsMouse ? root.tokens.hover_border_alpha : 0)
                     border.width: root.tokens.border_width
 
                     Text {
                         anchors.centerIn: parent
                         text: root.btEnabled ? "\uF1AD" : "\uF057"
-                        color: root.btEnabled ? state.colors.primary : state.colors.on_surface_variant
+                        color: root.btEnabled ? root.colors.primary : root.colors.on_surface_variant
                         font.pixelSize: 14
                         font.family: "Symbols Nerd Font Mono"
                     }
@@ -265,15 +331,15 @@ PanelWindow {
                 Rectangle {
                     width: 32; height: 32; radius: 16
                     color: mouseAreaBtScan.containsMouse
-                        ? Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, 0.2)
-                        : Qt.rgba(state.colors.surface_container_high.r, state.colors.surface_container_high.g, state.colors.surface_container_high.b, 0.6)
-                    border.color: Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, mouseAreaBtScan.containsMouse ? root.tokens.hover_border_alpha : 0)
+                        ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.2)
+                        : Qt.rgba(root.colors.surface_container_high.r, root.colors.surface_container_high.g, root.colors.surface_container_high.b, 0.6)
+                    border.color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, mouseAreaBtScan.containsMouse ? root.tokens.hover_border_alpha : 0)
                     border.width: root.tokens.border_width
 
                     Text {
                         anchors.centerIn: parent
                         text: "\uF021"
-                        color: state.colors.on_surface
+                        color: root.colors.on_surface
                         font.pixelSize: 14
                         font.family: "Symbols Nerd Font Mono"
                         RotationAnimation on rotation {
@@ -300,34 +366,29 @@ PanelWindow {
             Rectangle {
                 Layout.fillWidth: true
                 height: 1
-                color: Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, 0.1)
+                color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.1)
             }
 
             Repeater {
                 model: btModel
 
                 Rectangle {
-                    required property int index
-                    required property string mac
-                    required property string name
-                    required property bool paired
-                    required property bool connected
-                    required property bool trusted
-
                     Layout.fillWidth: true
-                    Layout.preferredHeight: connected ? root.tokens.row_height + 12 : root.tokens.row_height
+                    Layout.preferredHeight: model.connected ? root.tokens.row_height + 12 : root.tokens.row_height
                     radius: 12
-                    scale: connected ? 1.02 : 1.0
+                    scale: model.connected ? 1.02 : 1.0
                     Behavior on scale { SpringAnimation { spring: 3; damping: 0.2 } }
                     Behavior on Layout.preferredHeight { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
 
-                    color: btRowMouse.containsMouse || index === selectedIndex
-                        ? Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, 0.15)
-                        : connected
-                            ? Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, 0.12)
-                            : "transparent"
-                    border.color: connected || index === selectedIndex ? Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, 0.3) : "transparent"
-                    border.width: connected || index === selectedIndex ? 1 : 0
+                    color: btRowMouse.containsMouse
+                        ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.15)
+                        : index === root.selectedIndex
+                            ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.1)
+                            : model.connected
+                                ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.12)
+                                : "transparent"
+                    border.color: model.connected || index === root.selectedIndex ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.3) : "transparent"
+                    border.width: model.connected || index === root.selectedIndex ? 1 : 0
 
                     RowLayout {
                         anchors.fill: parent
@@ -339,27 +400,27 @@ PanelWindow {
                             Rectangle {
                                 anchors.fill: parent
                                 radius: 16
-                                color: connected
-                                    ? Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, root.tokens.primary_alpha)
-                                    : Qt.rgba(state.colors.surface_container_high.r, state.colors.surface_container_high.g, state.colors.surface_container_high.b, 0.6)
+                                color: model.connected
+                                    ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.primary_alpha)
+                                    : Qt.rgba(root.colors.surface_container_high.r, root.colors.surface_container_high.g, root.colors.surface_container_high.b, 0.6)
                             }
                             Text {
                                 anchors.centerIn: parent
                                 text: "\uF1AD"
-                                color: connected ? state.colors.on_primary : state.colors.on_surface
+                                color: model.connected ? root.colors.on_primary : root.colors.on_surface
                                 font.pixelSize: 14
                                 font.family: "Symbols Nerd Font Mono"
                             }
                             Rectangle {
                                 width: 12; height: 12; radius: 6
-                                color: state.colors.surface_container
+                                color: root.colors.surface_container
                                 anchors.bottom: parent.bottom
                                 anchors.right: parent.right
-                                visible: trusted
+                                visible: model.trusted
                                 Text {
                                     anchors.centerIn: parent
-                                    text: "\uF00C"
-                                    color: state.colors.primary
+                                    text: "\uF028" // Actually, \uF132 (shield) or \uF00C (check). \uF058 (check circle)
+                                    color: root.colors.primary
                                     font.pixelSize: 8
                                     font.family: "Symbols Nerd Font Mono"
                                 }
@@ -371,10 +432,10 @@ PanelWindow {
                             spacing: 2
 
                             Text {
-                                text: name
-                                color: connected ? state.colors.primary : state.colors.on_surface
-                                font.pixelSize: connected ? root.tokens.font_size_label + 2 : root.tokens.font_size_label
-                                font.weight: connected ? Font.Bold : Font.Medium
+                                text: model.name
+                                color: model.connected ? root.colors.primary : root.colors.on_surface
+                                font.pixelSize: model.connected ? root.tokens.font_size_label + 2 : root.tokens.font_size_label
+                                font.weight: model.connected ? Font.Bold : Font.Medium
                                 Layout.fillWidth: true
                                 elide: Text.ElideRight
                             }
@@ -382,30 +443,30 @@ PanelWindow {
                             RowLayout {
                                 spacing: 6
                                 Text {
-                                    text: mac
-                                    color: state.colors.on_surface_variant
+                                    text: model.mac
+                                    color: root.colors.on_surface_variant
                                     font.pixelSize: root.tokens.font_size_small
                                 }
                                 Rectangle {
                                     width: stateLabel.implicitWidth + 8
                                     height: 16
                                     radius: 8
-                                    color: connected
-                                        ? Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, 0.25)
-                                        : paired
-                                            ? Qt.rgba(state.colors.surface_bright.r, state.colors.surface_bright.g, state.colors.surface_bright.b, 0.5)
+                                    color: model.connected
+                                        ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.25)
+                                        : model.paired
+                                            ? Qt.rgba(root.colors.surface_bright.r, root.colors.surface_bright.g, root.colors.surface_bright.b, 0.5)
                                             : "transparent"
-                                    visible: connected || paired
-                                    border.color: connected ? Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, 0.5) : "transparent"
-                                    border.width: connected ? 1 : 0
+                                    visible: model.connected || model.paired
+                                    border.color: model.connected ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.5) : "transparent"
+                                    border.width: model.connected ? 1 : 0
 
                                     Text {
                                         id: stateLabel
                                         anchors.centerIn: parent
-                                        text: connected ? "Connected" : paired ? "Paired" : ""
-                                        color: connected ? state.colors.primary : state.colors.on_surface
+                                        text: model.connected ? "Connected" : model.paired ? "Paired" : ""
+                                        color: model.connected ? root.colors.primary : root.colors.on_surface
                                         font.pixelSize: 10
-                                        font.weight: connected ? Font.Bold : Font.Medium
+                                        font.weight: model.connected ? Font.Bold : Font.Medium
                                     }
                                 }
                             }
@@ -418,12 +479,12 @@ PanelWindow {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            if (connected) {
-                                Quickshell.execDetached(["bash", "-c", "bluetoothctl disconnect " + mac])
-                            } else if (paired) {
-                                Quickshell.execDetached(["bash", "-c", "bluetoothctl connect " + mac])
+                            if (model.connected) {
+                                Quickshell.execDetached(["bash", "-c", "bluetoothctl disconnect " + model.mac])
+                            } else if (model.paired) {
+                                Quickshell.execDetached(["bash", "-c", "bluetoothctl connect " + model.mac])
                             } else {
-                                Quickshell.execDetached(["bash", "-c", "bluetoothctl pair " + mac + " && bluetoothctl trust " + mac + " && bluetoothctl connect " + mac])
+                                Quickshell.execDetached(["bash", "-c", "bluetoothctl pair " + model.mac + " && bluetoothctl trust " + model.mac + " && bluetoothctl connect " + model.mac])
                             }
                             btScan.running = true
                         }
@@ -434,7 +495,7 @@ PanelWindow {
             Text {
                 visible: btModel.count === 0 && root.btEnabled
                 text: "No devices found"
-                color: state.colors.on_surface_variant
+                color: root.colors.on_surface_variant
                 font.pixelSize: root.tokens.font_size_label
                 Layout.alignment: Qt.AlignHCenter
                 Layout.topMargin: 12
@@ -443,11 +504,18 @@ PanelWindow {
             Text {
                 visible: !root.btEnabled
                 text: "Bluetooth is disabled"
-                color: state.colors.on_surface_variant
+                color: root.colors.on_surface_variant
                 font.pixelSize: root.tokens.font_size_label
                 Layout.alignment: Qt.AlignHCenter
                 Layout.topMargin: 12
             }
         }
+    }
+
+    IpcHandler {
+        target: "bt"
+        function toggle(): void { root.isOpen = !root.isOpen }
+        function open(): void { root.isOpen = true }
+        function close(): void { root.isOpen = false }
     }
 }

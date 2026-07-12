@@ -1,20 +1,99 @@
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
+import Quickshell.Io
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Effects
 
-import "../shared/BaseState.qml" as BaseState
-import "../shared/GlassPanel.qml" as GlassPanel
-
 PanelWindow {
     id: root
 
-    function reload(): void { state.reload() }
+    function reload(): void {
+        colorReader.running = false
+        colorReader.running = true
+        tokenReader.running = false
+        tokenReader.running = true
+    }
 
-    property alias isOpen: state.isOpen
-    property bool ready: state.ready
+    WlrLayershell.layer: WlrLayer.Overlay
+    exclusionMode: WlrLayershell.Ignore
+
+    implicitWidth: root.ready ? root.tokens.panel_width : 180
+    implicitHeight: Math.min(netColumn.implicitHeight + 32, Screen.height * 0.75)
+    color: "transparent"
+    anchors.right: true
+    anchors.top: true
+
+    HyprlandFocusGrab {
+        windows: [root]
+        active: root.isOpen
+        onCleared: { if (root.isOpen) root.isOpen = false }
+    }
+
+    Shortcut {
+        sequence: "Escape"
+        onActivated: { if (root.isOpen) root.isOpen = false }
+    }
+
+    property bool isOpen: false
+    property bool ready: false
+    property bool colorsLoaded: false
+    property bool tokensLoaded: false
+
+    onIsOpenChanged: {
+        if (isOpen) {
+            wifiScan.running = true
+        }
+    }
+
+    visible: ready && (isOpen || root.slideOffset !== 120)
+
+    property int slideOffset: isOpen ? 0 : 120
+
+    Behavior on slideOffset {
+        NumberAnimation {
+            id: slideAnim
+            duration: 350
+            easing.type: Easing.OutQuint
+        }
+    }
+
+    margins { right: root.slideOffset; top: root.tokens.calendar_margin_top }
+
+    property QtObject colors: QtObject {
+        property color background: "#12131b"
+        property color primary: "#acc7ff"
+        property color on_primary: "#062f64"
+        property color on_surface: "#e4e1ee"
+        property color surface_dim: "#12131b"
+        property color surface_container: "#1f1f28"
+        property color surface_container_high: "#292932"
+        property color surface_bright: "#393842"
+        property color shadow: "#000000"
+        property color on_surface_variant: "#c4c6d1"
+
+        function updateFromJson(jsonString) {
+            try {
+                var c = JSON.parse(jsonString)
+                if (!c || Object.keys(c).length === 0) return false
+                if (c.background) background = c.background
+                if (c.primary) primary = c.primary
+                if (c.on_primary) on_primary = c.on_primary
+                if (c.on_surface) on_surface = c.on_surface
+                if (c.surface_dim) surface_dim = c.surface_dim
+                if (c.surface_container) surface_container = c.surface_container
+                if (c.surface_container_high) surface_container_high = c.surface_container_high
+                if (c.surface_bright) surface_bright = c.surface_bright
+                if (c.shadow) shadow = c.shadow
+                if (c.on_surface_variant) on_surface_variant = c.on_surface_variant
+                return true
+            } catch (e) {
+                console.log("Failed to parse quickshell colors: " + e)
+                return false
+            }
+        }
+    }
 
     property QtObject tokens: QtObject {
         property int panel_width: 320
@@ -72,57 +151,33 @@ PanelWindow {
         }
     }
 
-    BaseState.BaseState {
-        id: state
-        parent: root
-        tokens: root.tokens
-        ipcTarget: "net"
-    }
-
-    WlrLayershell.layer: WlrLayer.Overlay
-    exclusionMode: WlrLayershell.Ignore
-
-    implicitWidth: root.ready ? root.tokens.panel_width : 180
-    implicitHeight: Math.min(netColumn.implicitHeight + 32, Screen.height * 0.75)
-    color: "transparent"
-    anchors.right: true
-    anchors.top: true
-
-    HyprlandFocusGrab {
-        windows: [root]
-        active: state.isOpen
-        onCleared: { if (state.isOpen) state.isOpen = false }
-    }
-
-    Shortcut {
-        sequence: "Escape"
-        onActivated: { if (state.isOpen) state.isOpen = false }
-    }
-
-    onIsOpenChanged: {
-        if (state.isOpen) {
-            selectedIndex = -1
-            wifiScan.running = true
-            netColumn.forceActiveFocus()
+    Process {
+        id: colorReader
+        command: ["cat", Quickshell.env("HOME") + "/.config/shayar/colors/quickshell.json"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.colorsLoaded = root.colors.updateFromJson(this.text.trim())
+                root.ready = root.colorsLoaded && root.tokensLoaded
+                colorReader.running = false
+            }
         }
+        running: true
     }
 
-    visible: state.ready && (state.isOpen || root.slideOffset !== 120)
-
-    property int slideOffset: state.isOpen ? 0 : 120
-
-    Behavior on slideOffset {
-        NumberAnimation {
-            id: slideAnim
-            duration: 350
-            easing.type: Easing.OutQuint
+    Process {
+        id: tokenReader
+        command: ["cat", Quickshell.env("HOME") + "/.config/shayar/colors/quickshell-tokens.json"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.tokensLoaded = root.tokens.updateFromJson(this.text.trim())
+                root.ready = root.colorsLoaded && root.tokensLoaded
+                tokenReader.running = false
+            }
         }
+        running: true
     }
-
-    margins { right: root.slideOffset; top: root.tokens.calendar_margin_top }
 
     property bool wifiEnabled: true
-    property int selectedIndex: -1
 
     ListModel { id: wifiModel }
 
@@ -157,34 +212,58 @@ PanelWindow {
         })
     }
 
-    function activateSelected() {
-        if (selectedIndex < 0 || selectedIndex >= wifiModel.count) return
-        var item = wifiModel.get(selectedIndex)
-        if (item.inUse) {
-            Quickshell.execDetached(["bash", "-c", "nmcli device disconnect wlan0"])
-        } else {
-            Quickshell.execDetached(["bash", "-c", "nmcli device wifi connect \"" + item.bssid + "\""])
-        }
-        wifiScan.running = true
-    }
-
     Timer {
         interval: 3000
-        running: state.isOpen
+        running: root.isOpen
         onTriggered: wifiScan.running = true
     }
 
     Item {
         id: panelContainer
         width: root.tokens.panel_width
-        height: Math.min(netColumn.implicitHeight + 32, Screen.height * 0.75)
+        height: netColumn.implicitHeight + 32
         anchors.top: parent.top
         anchors.right: parent.right
 
-        GlassPanel.GlassPanel {
+        Rectangle {
+            id: panelBg
             anchors.fill: parent
-            colors: state.colors
-            tokens: root.tokens
+            radius: root.tokens.panel_radius
+            color: Qt.rgba(root.colors.surface_container.r, root.colors.surface_container.g, root.colors.surface_container.b, root.tokens.panel_bg_alpha)
+
+            layer.enabled: true
+            layer.effect: MultiEffect {
+                blurEnabled: true
+                blur: root.tokens.blur_strength
+                saturation: 0.0
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                radius: parent.radius
+                gradient: Gradient {
+                    orientation: Gradient.Vertical
+                    GradientStop { position: 0.0; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_top_alpha) }
+                    GradientStop { position: 0.3; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_mid_alpha) }
+                    GradientStop { position: 1.0; color: "transparent" }
+                }
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 1
+                radius: parent.radius - 1
+                color: "transparent"
+                border.color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.border_alpha)
+                border.width: root.tokens.border_width
+            }
+        }
+
+        RectangularShadow {
+            anchors.fill: panelBg
+            radius: panelBg.radius
+            blur: 24
+            color: Qt.rgba(root.colors.shadow.r, root.colors.shadow.g, root.colors.shadow.b, root.tokens.shadow_alpha)
         }
 
         ColumnLayout {
@@ -192,33 +271,22 @@ PanelWindow {
             anchors.fill: parent
             anchors.margins: 16
             spacing: 8
-            focus: true
 
-            Keys.onUpPressed: {
-                if (selectedIndex <= 0) selectedIndex = wifiModel.count - 1
-                else selectedIndex--
-            }
-            Keys.onDownPressed: {
-                if (selectedIndex >= wifiModel.count - 1) selectedIndex = 0
-                else selectedIndex++
-            }
-            Keys.onReturnPressed: activateSelected()
-            Keys.onEnterPressed: activateSelected()
-
+            // Header row
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 8
 
                 Text {
                     text: "\uF1EB"
-                    color: state.colors.primary
+                    color: root.colors.primary
                     font.pixelSize: root.tokens.icon_size + 4
                     font.family: "Symbols Nerd Font Mono"
                 }
 
                 Text {
                     text: "Wi-Fi"
-                    color: state.colors.on_surface
+                    color: root.colors.on_surface
                     font.pixelSize: root.tokens.font_size_label + 2
                     font.weight: Font.DemiBold
                     Layout.fillWidth: true
@@ -227,15 +295,15 @@ PanelWindow {
                 Rectangle {
                     width: 32; height: 32; radius: 16
                     color: mouseAreaToggle.containsMouse
-                        ? Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, 0.2)
-                        : Qt.rgba(state.colors.surface_container_high.r, state.colors.surface_container_high.g, state.colors.surface_container_high.b, 0.6)
-                    border.color: Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, mouseAreaToggle.containsMouse ? root.tokens.hover_border_alpha : 0)
+                        ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.2)
+                        : Qt.rgba(root.colors.surface_container_high.r, root.colors.surface_container_high.g, root.colors.surface_container_high.b, 0.6)
+                    border.color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, mouseAreaToggle.containsMouse ? root.tokens.hover_border_alpha : 0)
                     border.width: root.tokens.border_width
 
                     Text {
                         anchors.centerIn: parent
                         text: root.wifiEnabled ? "\uF1EB" : "\uF057"
-                        color: root.wifiEnabled ? state.colors.primary : state.colors.on_surface_variant
+                        color: root.wifiEnabled ? root.colors.primary : root.colors.on_surface_variant
                         font.pixelSize: 14
                         font.family: "Symbols Nerd Font Mono"
                     }
@@ -261,15 +329,15 @@ PanelWindow {
                 Rectangle {
                     width: 32; height: 32; radius: 16
                     color: mouseAreaRefresh.containsMouse
-                        ? Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, 0.2)
-                        : Qt.rgba(state.colors.surface_container_high.r, state.colors.surface_container_high.g, state.colors.surface_container_high.b, 0.6)
-                    border.color: Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, mouseAreaRefresh.containsMouse ? root.tokens.hover_border_alpha : 0)
+                        ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.2)
+                        : Qt.rgba(root.colors.surface_container_high.r, root.colors.surface_container_high.g, root.colors.surface_container_high.b, 0.6)
+                    border.color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, mouseAreaRefresh.containsMouse ? root.tokens.hover_border_alpha : 0)
                     border.width: root.tokens.border_width
 
                     Text {
                         anchors.centerIn: parent
                         text: "\uF021"
-                        color: state.colors.on_surface
+                        color: root.colors.on_surface
                         font.pixelSize: 14
                         font.family: "Symbols Nerd Font Mono"
                         RotationAnimation on rotation {
@@ -296,34 +364,29 @@ PanelWindow {
             Rectangle {
                 Layout.fillWidth: true
                 height: 1
-                color: Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, 0.1)
+                color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.1)
             }
 
             Repeater {
                 model: wifiModel
 
                 Rectangle {
-                    required property int index
-                    required property bool inUse
-                    required property string ssid
-                    required property int signal
-                    required property bool secured
-                    required property string bssid
-
                     Layout.fillWidth: true
-                    Layout.preferredHeight: inUse ? root.tokens.row_height + 12 : root.tokens.row_height
+                    Layout.preferredHeight: model.inUse ? root.tokens.row_height + 12 : root.tokens.row_height
                     radius: 12
-                    scale: inUse ? 1.02 : 1.0
+                    scale: model.inUse ? 1.02 : 1.0
                     Behavior on scale { SpringAnimation { spring: 3; damping: 0.2 } }
                     Behavior on Layout.preferredHeight { NumberAnimation { duration: 250; easing.type: Easing.OutQuint } }
 
-                    color: rowMouse.containsMouse || index === selectedIndex
-                        ? Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, 0.15)
-                        : inUse
-                            ? Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, 0.12)
-                            : "transparent"
-                    border.color: inUse || index === selectedIndex ? Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, 0.3) : "transparent"
-                    border.width: inUse || index === selectedIndex ? 1 : 0
+                    color: rowMouse.containsMouse
+                        ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.15)
+                        : index === root.selectedIndex
+                            ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.1)
+                            : model.inUse
+                                ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.12)
+                                : "transparent"
+                    border.color: model.inUse || index === root.selectedIndex ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.3) : "transparent"
+                    border.width: model.inUse || index === root.selectedIndex ? 1 : 0
 
                     RowLayout {
                         anchors.fill: parent
@@ -335,27 +398,27 @@ PanelWindow {
                             Rectangle {
                                 anchors.fill: parent
                                 radius: 16
-                                color: inUse
-                                    ? Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, root.tokens.primary_alpha)
-                                    : Qt.rgba(state.colors.surface_container_high.r, state.colors.surface_container_high.g, state.colors.surface_container_high.b, 0.6)
+                                color: model.inUse
+                                    ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.primary_alpha)
+                                    : Qt.rgba(root.colors.surface_container_high.r, root.colors.surface_container_high.g, root.colors.surface_container_high.b, 0.6)
                             }
                             Text {
                                 anchors.centerIn: parent
                                 text: "\uF1EB"
-                                color: inUse ? state.colors.on_primary : (signal > 70 ? state.colors.primary : (signal > 40 ? "#e5c07b" : "#ff5555"))
+                                color: model.inUse ? root.colors.on_primary : (model.signal > 70 ? root.colors.primary : (model.signal > 40 ? "#e5c07b" : "#ff5555"))
                                 font.pixelSize: 14
                                 font.family: "Symbols Nerd Font Mono"
                             }
                             Rectangle {
                                 width: 12; height: 12; radius: 6
-                                color: state.colors.surface_container
+                                color: root.colors.surface_container
                                 anchors.bottom: parent.bottom
                                 anchors.right: parent.right
-                                visible: secured
+                                visible: model.secured
                                 Text {
                                     anchors.centerIn: parent
                                     text: "\uF023"
-                                    color: state.colors.primary
+                                    color: root.colors.primary
                                     font.pixelSize: 8
                                     font.family: "Symbols Nerd Font Mono"
                                 }
@@ -366,20 +429,23 @@ PanelWindow {
                             Layout.fillWidth: true
                             spacing: 2
 
-                            Text {
-                                text: ssid
-                                color: inUse ? state.colors.primary : state.colors.on_surface
-                                font.pixelSize: inUse ? root.tokens.font_size_label + 2 : root.tokens.font_size_label
-                                font.weight: inUse ? Font.Bold : Font.Medium
-                                Layout.fillWidth: true
-                                elide: Text.ElideRight
+                            RowLayout {
+                                spacing: 6
+                                Text {
+                                    text: model.ssid
+                                    color: model.inUse ? root.colors.primary : root.colors.on_surface
+                                    font.pixelSize: model.inUse ? root.tokens.font_size_label + 2 : root.tokens.font_size_label
+                                    font.weight: model.inUse ? Font.Bold : Font.Medium
+                                    Layout.fillWidth: true
+                                    elide: Text.ElideRight
+                                }
                             }
 
                             Text {
-                                text: inUse ? "Connected" : signal + "%"
-                                color: inUse ? state.colors.primary : state.colors.on_surface_variant
+                                text: model.inUse ? "Connected" : model.signal + "%"
+                                color: model.inUse ? root.colors.primary : root.colors.on_surface_variant
                                 font.pixelSize: root.tokens.font_size_small
-                                font.weight: inUse ? Font.Medium : Font.Normal
+                                font.weight: model.inUse ? Font.Medium : Font.Normal
                             }
                         }
                     }
@@ -390,10 +456,10 @@ PanelWindow {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            if (inUse) {
+                            if (model.inUse) {
                                 Quickshell.execDetached(["bash", "-c", "nmcli device disconnect wlan0"])
                             } else {
-                                Quickshell.execDetached(["bash", "-c", "nmcli device wifi connect \"" + bssid + "\""])
+                                Quickshell.execDetached(["bash", "-c", "nmcli device wifi connect \"" + model.bssid + "\""])
                             }
                             wifiScan.running = true
                         }
@@ -404,11 +470,18 @@ PanelWindow {
             Text {
                 visible: wifiModel.count === 0
                 text: root.wifiEnabled ? "No networks found" : "Wi-Fi is disabled"
-                color: state.colors.on_surface_variant
+                color: root.colors.on_surface_variant
                 font.pixelSize: root.tokens.font_size_label
                 Layout.alignment: Qt.AlignHCenter
                 Layout.topMargin: 12
             }
         }
+    }
+
+    IpcHandler {
+        target: "net"
+        function toggle(): void { root.isOpen = !root.isOpen }
+        function open(): void { root.isOpen = true }
+        function close(): void { root.isOpen = false }
     }
 }

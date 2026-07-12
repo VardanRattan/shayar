@@ -23,6 +23,9 @@ error() { echo -e "${RED}[ERROR]${NC} $1" >&2; }
 # Ensure that cache folder exists
 mkdir -p "$HOME/.cache"
 
+# Reset waybar state on boot (disabled flag should not persist across reboots)
+rm -f "$HOME/.config/shayar/settings/waybar-disabled"
+
 # Set Wallpaper
 mkdir -p "$CACHE_FOLDER"
 if [ ! -f "$CACHE_FILE" ]; then

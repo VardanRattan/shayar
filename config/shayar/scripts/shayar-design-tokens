@@ -159,8 +159,12 @@ generate_rofi_font() {
 }
 
 generate_waybar_css() {
-    local src="${XDG_CONFIG_HOME:-$HOME/.config}/waybar/themes/shayar/style.template.css"
+    local src="${XDG_CONFIG_HOME:-$HOME/.config}/shayar/themes/waybar-style.css"
     local dst="$OUT_DIR/waybar-style.css"
+    if [ "$src" = "$dst" ]; then
+        echo ":: waybar-style.css is already in OUT_DIR, skipping"
+        return 0
+    fi
     if [ -f "$src" ]; then
         cp "$src" "$dst"
         local sed_script

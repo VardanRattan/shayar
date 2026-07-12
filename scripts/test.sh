@@ -121,7 +121,13 @@ fi
 check "quickshell power menu exists" test -f config/quickshell/PowerApp/PowerWindow.qml
 check "quickshell lock icon exists" test -f config/quickshell/icons/lock.svg
 check "quickshell calendar exists" test -f config/quickshell/CalendarApp/CalendarWindow.qml
+check "quickshell network exists" test -f config/quickshell/NetApp/NetWindow.qml
+check "quickshell bluetooth exists" test -f config/quickshell/BtApp/BtWindow.qml
+check "quickshell volume exists" test -f config/quickshell/VolApp/VolWindow.qml
 check "quickshell shell exists" test -f config/quickshell/shell.qml
+check "quickshell BaseState exists" test -f config/quickshell/shared/BaseState.qml
+check "quickshell GlassPanel exists" test -f config/quickshell/shared/GlassPanel.qml
+check "quickshell-tokens.json exists" test -f config/shayar/colors/quickshell-tokens.json
 check "shayar-calendar-toggle script exists" test -f config/shayar/bin/shayar-calendar-toggle
 
 # Keybinding Lua has no duplicate binds
@@ -169,7 +175,7 @@ IPC_CALLS=$(grep -roE 'qs .* ipc call [a-zA-Z0-9_-]+ [a-zA-Z0-9_-]+' config/shay
 
 if [ -n "$IPC_CALLS" ]; then
     while read -r target method; do
-        target_found=$(grep -rl "target: \"$target\"" config/quickshell/ || true)
+        target_found=$(grep -rl "ipcTarget: \"$target\"" config/quickshell/ || true)
         if [ -n "$target_found" ]; then
             pass "QML IPC target '$target' exists"
             method_found=0
@@ -179,6 +185,10 @@ if [ -n "$IPC_CALLS" ]; then
                     break
                 fi
             done
+            # Also check shared BaseState where IPC methods are defined
+            if [ "$method_found" -eq 0 ] && grep -q "function $method" config/quickshell/shared/BaseState.qml 2>/dev/null; then
+                method_found=1
+            fi
             if [ "$method_found" -eq 1 ]; then
                 pass "QML IPC method '$target.$method' exists"
             else

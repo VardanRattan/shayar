@@ -3,7 +3,7 @@
 ## Architecture
 
 - **Single theme**: glass
-- **Single visual source**: `config/shayar/themes/design-tokens.json` (252 tokens across 8 sections)
+- **Single visual source**: `config/shayar/themes/design-tokens.json` (252 tokens across 9 sections)
 - **Single settings file**: `config/shayar/settings/shayar.conf` (23 lines, `KEY="value"`)
 - **8 generated token files**: CSS, Lua, Rasi, Env, Hyprlock, Kitty, GTK + `shayar.json` — run `shayar-design-tokens generate` after any change to `design-tokens.json`
 - **Color pipeline**: `shayar.json` → matugen → per-component `colors.*` files → all CSS/Lua/Rasi configs
@@ -42,13 +42,13 @@ Available extensions in `config/shayar/extensions/available/`:
 | `config/hypr/conf/autostart.lua` | Startup sequence |
 | `config/waybar/` | Status bar (`launch.sh`, `themes/`) |
 | `config/swaync/` | Notification center |
-| `config/quickshell/` | Quickshell applets: power menu, calendar, WiFi, Bluetooth, Volume (`PowerApp/`, `CalendarApp/`, `NetApp/`, `BtApp/`, `VolApp/`, `icons/`) |
+| `config/quickshell/` | Quickshell applets: power menu, calendar, WiFi, Bluetooth, Volume (`PowerApp/`, `CalendarApp/`, `NetApp/`, `BtApp/`, `VolApp/`, `shared/`, `icons/`) |
 | `config/rofi/` | App launcher (5 rasi config files) |
 | `config/kitty/` | Terminal emulator |
 | `config/shayar/` | Core engine: settings, themes, scripts, bin, listeners |
 | `config/shayar/settings/shayar.conf` | All user-facing settings |
 | `config/shayar/scripts/` | 13 shayar scripts (shayar-wallpaper, shayar-design-tokens, etc.) |
-| `config/shayar/bin/` | 13 CLI tools available system-wide |
+| `config/shayar/bin/` | 14 CLI tools available system-wide |
 | `config/shayar/themes/design-tokens.json` | **Single source of truth** for all visual values |
 | `config/shayar/themes/glass/theme.sh` | Theme activator |
 | `config/matugen/` | Color generation pipeline (config.toml + templates) |
@@ -69,6 +69,9 @@ Available extensions in `config/shayar/extensions/available/`:
 | New script | `shayar/bin/` | Run `scripts/link.sh` |
 | Modify power menu | `quickshell/PowerApp/PowerWindow.qml` + `quickshell/icons/*.svg` | Restart QS: `pkill qs; qs -p ~/.config/quickshell/shell.qml` |
 | Modify calendar | `quickshell/CalendarApp/CalendarWindow.qml` | Restart QS: `pkill qs; qs -p ~/.config/quickshell/shell.qml` |
+| Modify network | `quickshell/NetApp/NetWindow.qml` | Restart QS: `pkill qs; qs -p ~/.config/quickshell/shell.qml` |
+| Modify bluetooth | `quickshell/BtApp/BtWindow.qml` | Restart QS: `pkill qs; qs -p ~/.config/quickshell/shell.qml` |
+| Modify volume | `quickshell/VolApp/VolWindow.qml` | Restart QS: `pkill qs; qs -p ~/.config/quickshell/shell.qml` |
 | Regenerate QS colors | — | Run `shayar-design-tokens generate --with-colors` or change wallpaper |
 | Regenerate colors from wallpaper | — | Run `shayar-wallpaper <path>` or `matugen image <path>` |
 
@@ -80,6 +83,7 @@ Available extensions in `config/shayar/extensions/available/`:
 - **opacity** (26): active/inactive, per-component opacities
 - **animation** (29): 14 bezier curves, 10 speed values, 6 transitions
 - **shadow** (5): waybar + swaync CSS shadow strings
+- **quickshell** (5): QS-specific tokens
 - **kitty** (9): font, size, window dims, padding, scrollback, cursor blink
 - **gtk** (6): GTK theme names
 
@@ -121,7 +125,7 @@ validate → cache → wait for awww → `awww img` → matugen → reload wayba
 - Updates check at **30min interval**
 - Low battery listener polls at **60s**
 - Startup: ~13 steps in `autostart.lua`, ~5 actions in `shayar-autostart`
-- ~46 shell scripts total, all lean (<150 lines each except shayar-design-tokens at 326 and shayar-wallpaper at 228)
+- ~26 shell scripts total, all lean (<150 lines each except shayar-design-tokens at 326 and shayar-wallpaper at 228)
 
 ## Dependencies
 
@@ -137,8 +141,8 @@ validate → cache → wait for awww → `awww img` → matugen → reload wayba
 
 See the git log for the full history. Key completed milestones:
 - Dual color source reconciliation (design-tokens.json is single source)
-- Shell hardening (30/30 scripts with strict mode)
-- CI pipeline (103 tests on push/PR)
+- Shell hardening (26/26 scripts with strict mode)
+- CI pipeline (130 tests on push/PR)
 - Extension hooks system (5 hook points)
 - Layered config with user overrides
 - Themed overlay system

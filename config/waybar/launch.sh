@@ -72,7 +72,7 @@ if [ -f "$TOKENS_ENV" ]; then
     while IFS='=' read -r key value; do
         case "$key" in
             DT_COLORS_*)
-                color_name="$(echo "$key" | sed 's/^DT_COLORS_//' | tr '[:upper:]' '[:lower:]' | tr '_' '-')"
+                color_name="$(echo "$key" | sed 's/^DT_COLORS_//' | tr '[:upper:]' '[:lower:]')"
                 hex_value="$(echo "$value" | tr -d '"')"
                 sed -i "s|@${color_name}|${hex_value}|g" "$CONFIG_TMP"
                 ;;
@@ -87,19 +87,74 @@ if [ -f "$TOKENS_ENV" ]; then
 fi
 
 if [ ! -f "$HOME/.config/shayar/settings/waybar-disabled" ]; then
+    # Resolve @DT_*@ tokens in CSS (same logic as config resolution)
+    STYLE_SRC="$HOME/.config/waybar/themes${arrThemes[1]}/$style_file"
+    STYLE_PATH="$STYLE_SRC"
+    if [ -f "$TOKENS_ENV" ]; then
+        STYLE_TMP="$runtime_dir/waybar-style-$$.css"
+        cp "$STYLE_SRC" "$STYLE_TMP"
+        while IFS='=' read -r key value; do
+            case "$key" in
+                DT_COLORS_*)
+                    color_name="$(echo "$key" | sed 's/^DT_COLORS_//' | tr '[:upper:]' '[:lower:]')"
+                    hex_value="$(echo "$value" | tr -d '"')"
+                    sed -i "s|@${color_name}|${hex_value}|g" "$STYLE_TMP"
+                    ;;
+                DT_*)
+                    val="$(echo "$value" | tr -d '"')"
+                    sed -i "s|@${key}@|${val}|g" "$STYLE_TMP"
+                    ;;
+            esac
+        done < <(awk '{ print length, $0 }' "$TOKENS_ENV" | sort -rn | cut -d' ' -f2-)
+        # Concatenate imported CSS into a single flat file so @import paths resolve
+        CSS_IMPORTS=$(grep -oP '@import\s+['"'"'"]([^'"'"'"]+)['"'"'"]\s*;' "$STYLE_TMP" | head -5)
+        if [ -n "$CSS_IMPORTS" ]; then
+            STYLE_FINAL="$runtime_dir/waybar-style-flat-$$.css"
+            > "$STYLE_FINAL"
+            while IFS= read -r import_line; do
+                import_path=$(echo "$import_line" | grep -oP '(['"'"'"])([^'"'"'"]+)\1' | tr -d '"' | tr -d "'")
+                if [ -n "$import_path" ]; then
+                    # Resolve relative to the theme directory
+                    resolved="$HOME/.config/waybar/themes${arrThemes[1]}/$(dirname "$style_file")/$import_path"
+                    [ -f "$resolved" ] && cat "$resolved" >> "$STYLE_FINAL"
+                fi
+            done <<< "$CSS_IMPORTS"
+            # Append the main CSS (excluding @import lines)
+            grep -v '^\s*@import' "$STYLE_TMP" >> "$STYLE_FINAL"
+            # Re-resolve tokens on the flat file (imports may contain @DT_*@ refs)
+            while IFS='=' read -r key value; do
+                case "$key" in
+                    DT_COLORS_*)
+                    color_name="$(echo "$key" | sed 's/^DT_COLORS_//' | tr '[:upper:]' '[:lower:]')"
+                    hex_value="$(echo "$value" | tr -d '"')"
+                    sed -i "s|@${color_name}|${hex_value}|g" "$STYLE_FINAL"
+                        ;;
+                    DT_*)
+                        val="$(echo "$value" | tr -d '"')"
+                        sed -i "s|@${key}@|${val}|g" "$STYLE_FINAL"
+                        ;;
+                esac
+            done < <(awk '{ print length, $0 }' "$TOKENS_ENV" | sort -rn | cut -d' ' -f2-)
+            STYLE_PATH="$STYLE_FINAL"
+        else
+            STYLE_PATH="$STYLE_TMP"
+        fi
+        echo ":: Resolved @color refs -> $STYLE_PATH"
+    fi
+
     HYPRLAND_SIGNATURE=$(hyprctl instances -j | jq -r '.[0].instance')
-setsid -f bash -c "
-    echo \$\$ > \"$runtime_dir/waybar-runner.pid\"
-    fail=0
-    while true; do
-        HYPRLAND_INSTANCE_SIGNATURE="$HYPRLAND_SIGNATURE" waybar -c "$CONFIG_PATH" -s ~/.config/waybar/themes${arrThemes[1]}/$style_file
-        rc=\$?
-        [ \"\$rc\" -eq 0 ] && exit 0
-        fail=\$((fail+1))
-        [ \"\$fail\" -ge 5 ] && { echo \":: waybar crashed \$fail times; stopping auto-restart\"; exit 1; }
-        sleep 1
-    done
-" >/dev/null 2>&1
+    setsid -f bash -c "
+        echo \$\$ > \"$runtime_dir/waybar-runner.pid\"
+        fail=0
+        while true; do
+            HYPRLAND_INSTANCE_SIGNATURE="$HYPRLAND_SIGNATURE" waybar -c "$CONFIG_PATH" -s "$STYLE_PATH"
+            rc=\$?
+            [ \"\$rc\" -eq 0 ] && exit 0
+            fail=\$((fail+1))
+            [ \"\$fail\" -ge 5 ] && { echo \":: waybar crashed \$fail times; stopping auto-restart\"; exit 1; }
+            sleep 1
+        done
+    " >/dev/null 2>&1
 else
     echo ":: Waybar disabled"
 fi

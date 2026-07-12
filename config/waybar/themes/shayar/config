@@ -66,7 +66,9 @@
             "default": ["", "", ""]
         },
         "tooltip-format": "Volume: {volume}%",
-        "on-click": "~/.config/shayar/bin/shayar-vol-toggle"
+        "on-click": "~/.config/shayar/bin/shayar-vol-toggle",
+        "on-scroll-up": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+",
+        "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
     },
 
     "bluetooth": {

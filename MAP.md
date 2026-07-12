@@ -12,7 +12,10 @@ This is the central nervous system. Everything else plugs into it.
 Tracks the current release. Version lives here for the settings app and update checker.
 
 ### `library.sh`
-Logging utility. Single function `_writeLog()` that prefixes output with `::`. Used by every other script.
+Shared utilities. Three functions:
+- `_writeLog()` — prefixes output with `::`
+- `run_extensions()` — fires extension hooks at 5 hook points
+- `config_path()` — resolves user override path before shipped default
 
 ### `listeners.sh`
 The listener process manager. One background listener ships out of the box:
@@ -85,20 +88,27 @@ Branding. `shayar-logo.png`, `shayar-logo.svg`, `shayar.svg`. The logo is a geom
 Default wallpapers. `default.png` is the only fallback wallpaper.
 
 ### `bin/`
-CLI tools available system-wide after symlinking:
+14 CLI tools available system-wide after symlinking:
 
 - **`shayar-apps`** -- Scans `/usr/share/applications` and `~/.local/share/applications` for `.desktop` files. Handles Flatpak apps. Feeds them to fzf. Icons: `󰀻 ` for system apps, `󰏖 ` for Flatpak.
 - **`shayar-finder`** -- Traverses directories up to 4 levels deep. Returns `TYPE_DIR:` or `TYPE_FILE:` prefixes for shell integration.
 - **`shayar-quicklinks`** -- Reads `~/.quicklinks` (pipe-delimited: `Name | Description | Command`). Shows in fzf.
 - **`shayar-screenshot`** -- Wraps `grim`/`slurp`. Supports fullscreen, area selection, and window selection. Delay options: 0s, 2s, 5s, 10s. Copies to clipboard via `wl-copy`. Saves to the folder specified by `SCREENSHOT_FOLDER` in `shayar.conf`.
 - **`shayar-wallpaper`** -- Fzf wallpaper picker. Reads the wallpaper directory from `WALLPAPER_FOLDER` in `shayar.conf`. Filters to jpg/jpeg/png/webp/gif.
+- **`shayar-menu`** -- Unified settings menu (rofi). Supports extension menu items.
+- **`shayar-power-toggle`** — Power menu (Quickshell). Closes other 4 panels.
+- **`shayar-calendar-toggle`** — Calendar panel (Quickshell). Closes other 4 panels.
+- **`shayar-net-toggle`** — Network panel (Quickshell). Closes other 4 panels.
+- **`shayar-bt-toggle`** — Bluetooth panel (Quickshell). Closes other 4 panels.
+- **`shayar-vol-toggle`** — Volume panel (Quickshell). Closes other 4 panels.
+- **`shayar-bt-popup`** — Bluetooth popup (legacy).
+- **`shayar-wifi-popup`** — WiFi popup (legacy).
 
 ### `scripts/`
-22 scripts. Grouped by function:
+13 scripts. Grouped by function:
 
 **Wallpaper pipeline:**
 - `shayar-wallpaper` -- The main wallpaper engine. Full pipeline: validate image, cache path, apply effects, wait for awww-daemon, set wallpaper via `awww img`, run matugen, reload waybar/swaync, generate blurred wallpaper for lockscreen, create rofi rasi file. Flags: `--random`, `--effect`, `--monitor`, `--skip-wallpaper`, `--skip-theming`, `--crop-gravity`.
-- `shayar-wallpaper-automation` -- Toggle-based auto-rotator. Reads interval from `WALLPAPER_AUTOMATION` in `shayar.conf`. Creates/deletes a cache flag to track state.
 - `shayar-autostart` -- Main startup orchestrator. Creates cache folder, starts nm-applet, applies wallpaper theming.
 
 **Toggles:**
@@ -109,16 +119,12 @@ CLI tools available system-wide after symlinking:
 
 **System tools:**
 - `shayar-power` -- Power management capsule. Options: `--lock`, `--suspend`, `--logout`, `--reboot`, `--poweroff`. Overrides with hyprshutdown if available.
-- `shayar-reload-statusbar` -- Reloads waybar.
 - `shayar-network` -- Starts NetworkManager if needed, opens nmtui.
 - `shayar-notification-handler` -- Wrapper around `notify-send` with standardized options.
 - `shayar-cliphist` -- Clipboard manager. Uses rofi. Modes: list, delete, wipe.
 
 **Installation and updates:**
 - `shayar-install-system-updates` -- Full system update. Supports Arch (yay/paru) and Fedora (dnf). Also updates Flatpak. Uses `gum` for colored output.
-
-**Utilities:**
-- `shayar-command-exists` -- Command existence check.
 
 ---
 
@@ -156,16 +162,16 @@ Startup sequence on `hyprland.start`:
 1. Export Wayland environment to systemd
 2. Restart xdg-desktop-portal
 3. Start awww-daemon (wallpaper daemon)
-4. Set cursor to Bibata-Modern-Ice 24
+4. Set cursor theme
 5. Start all listeners
-6. Start Waybar
+6. Start swayosd-server
 7. Start polkit agent
-8. Run `shayar-autostart`
-10. Load GTK settings
-11. Start SwayNC
-12. Start hypridle
+8. Run `shayar-autostart` (wallpaper + nm-applet + waybar)
+9. Run `gtk.sh` (GTK settings)
+10. Start SwayNC
+11. Start hypridle
+12. Start Quickshell
 13. Load cliphist history
-14. Run cleanup
 
 ### `conf/shayar.lua`
 Shayar-specific configuration:
@@ -259,7 +265,7 @@ Only `default.lua` ships. gaps_in 10, gaps_out 20, border_size 2, active_border 
 12 presets: 1366x768, 1440x1080, 1600x900, 1920x1080, 1920x1200, 2560x1440, 2560x1440@120, 2560x1440@120x125, 3440x1440, default-125, default, highres.
 
 ### Helper scripts (`scripts/`)
-7 scripts: gtk, hypridle, keybindings, launcher, power, toggle-animations, volume-slider.
+4 scripts: gtk, keybindings, launcher, power.
 
 ---
 
@@ -269,11 +275,12 @@ Only `default.lua` ships. gaps_in 10, gaps_out 20, border_size 2, active_border 
 Main launcher with flock-based duplicate prevention:
 1. Kills all running waybar instances
 2. Sources `settings/shayar.conf` for `WAYBAR_THEME` and module toggles
-3. Removes incompatible legacy themes
-4. Toggles modules based on settings files
-5. Loads config/style from theme directory (supports config-custom/style-custom overrides)
+3. Loads config/style from theme directory (supports config-custom/style-custom overrides)
+4. Resolves `@DT_*@` tokens in JSON config and CSS via `design-tokens.env`
+5. Flattens CSS `@import` chains into single temp file, re-resolves tokens
 6. Respects `waybar-disabled` flag
 7. Sets HYPRLAND_INSTANCE_SIGNATURE for IPC
+8. Auto-restarts on crash (up to 5 retries)
 
 ### `toggle.sh`
 Creates or removes the `waybar-disabled` flag, then relaunches.
@@ -341,10 +348,10 @@ Material Design 3 color definitions for Rofi.
 
 ## Quickshell Applets (`config/quickshell/`)
 
-Replaced wlogout in 2026-07. Native QML panels with glass theme, persistent Quickshell process, toggled via IPC. All applets share the same color/token pipeline from `quickshell.json`.
+Replaced wlogout in 2026-07. Native QML panels with glass theme, persistent Quickshell process, toggled via IPC. All applets share `shared/BaseState.qml` (colors, token readers, IPC handler) and `shared/GlassPanel.qml` (panel background, gradient, border, shadow). Color/token pipeline from `quickshell.json`.
 
 ### Toggle mechanism
-All four popups (power, calendar, net, bt) use mutual exclusion — opening one closes the other three via `qs ipc call <target> close`.
+All five popups (power, calendar, net, bt, vol) use mutual exclusion — opening one closes the other four via `qs ipc call <target> close`.
 
 ### `PowerApp/PowerWindow.qml`
 PanelWindow with 6 buttons (Lock, Suspend, Log Out, Hibernate, Restart, Shut Down), slide-from-right animation, keyboard navigation, gradient + blur glass look. Anchored center-right.
@@ -356,7 +363,10 @@ PanelWindow with a full month calendar, date picker, and quick navigation. Ancho
 WiFi applet. Scans `nmcli` for nearby networks, shows SSID, signal strength, lock icon if secured, connected state. Actions: connect by BSSID, disconnect, toggle radio on/off, rescan. Auto-refreshes every 3s while open. Anchored top-right.
 
 ### `BtApp/BtWindow.qml`
-Bluetooth applet. Scans `bluetoothctl` for devices, shows name, MAC, paired/connected/trusted state. Actions: power toggle, connect/disconnect, pair+trust+connect, bounded 12s scan. Anchored top-right.
+Bluetooth applet. Scans `bluetoothctl` for devices, shows name, MAC, paired/connected/trusted state. Actions: power toggle, connect/disconnect, pair+trust+connect, bounded 12s scan. Keyboard navigation (arrows + Enter). Anchored top-right.
+
+### `VolApp/VolWindow.qml`
+Volume applet. Shows sink/source with slider, mute toggle, icon + label. Scroll wheel adjusts in 5% steps. Keyboard navigation (left/right + space). Anchored center-right.
 
 ### Toggle scripts
 | Script | IPC target | Keybind |
@@ -365,6 +375,7 @@ Bluetooth applet. Scans `bluetoothctl` for devices, shows name, MAC, paired/conn
 | `shayar-calendar-toggle` | `calendar` | (waybar clock click) |
 | `shayar-net-toggle` | `net` | `SUPER+CTRL+N` |
 | `shayar-bt-toggle` | `bt` | `SUPER+CTRL+B` |
+| `shayar-vol-toggle` | `vol` | (XF86AudioRaiseVolume waybar scroll) |
 
 ### Color pipeline
 `matugen` → `~/.config/shayar/colors/quickshell.json` → read by `Process` in QML at startup. Reloaded via `qs ipc call theme-manager reload` on wallpaper change.

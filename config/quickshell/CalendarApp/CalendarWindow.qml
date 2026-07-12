@@ -1,96 +1,21 @@
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
-import Quickshell.Io
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
 import QtQuick.Effects
 
+import "../shared/BaseState.qml" as BaseState
+import "../shared/GlassPanel.qml" as GlassPanel
+
 PanelWindow {
     id: root
 
-    function reload(): void {
-        colorReader.running = false
-        colorReader.running = true
-        tokenReader.running = false
-        tokenReader.running = true
-    }
+    function reload(): void { state.reload() }
 
-    WlrLayershell.layer: WlrLayer.Overlay
-    exclusionMode: WlrLayershell.Ignore
-    anchors.left: true
-    anchors.top: true
-
-    implicitWidth: 320
-    implicitHeight: 380
-    color: "transparent"
-
-    margins { top: root.tokens.calendar_margin_top; left: root.tokens.calendar_margin_left }
-
-    HyprlandFocusGrab {
-        windows: [root]
-        active: root.isOpen
-        onCleared: { if (root.isOpen) root.isOpen = false }
-    }
-
-    Shortcut {
-        sequence: "Escape"
-        onActivated: { if (root.isOpen) root.isOpen = false }
-    }
-
-    property bool isOpen: false
-    property bool ready: false
-    property bool colorsLoaded: false
-    property bool tokensLoaded: false
-
-    onIsOpenChanged: {
-        if (isOpen) {
-            var now = new Date()
-            todayDate = now.getDate()
-            todayMonth = now.getMonth()
-            todayYear = now.getFullYear()
-            currentMonth = todayMonth
-            currentYear = todayYear
-            updateCalendar(currentYear, currentMonth)
-        }
-    }
-
-    visible: ready && (isOpen || popAnim.running)
-
-    property QtObject colors: QtObject {
-        property color background: "#12131b"
-        property color primary: "#acc7ff"
-        property color on_primary: "#062f64"
-        property color surface_bright: "#393842"
-        property color surface_dim: "#12131b"
-        property color surface_container: "#1f1f28"
-        property color surface_container_high: "#292932"
-        property color shadow: "#000000"
-        property color on_surface: "#e4e1ee"
-        property color on_surface_variant: "#c4c6d1"
-
-        function updateFromJson(jsonString) {
-            try {
-                var c = JSON.parse(jsonString)
-                if (!c || Object.keys(c).length === 0) return false
-                if (c.background) background = c.background
-                if (c.primary) primary = c.primary
-                if (c.on_primary) on_primary = c.on_primary
-                if (c.surface_bright) surface_bright = c.surface_bright
-                if (c.surface_dim) surface_dim = c.surface_dim
-                if (c.surface_container) surface_container = c.surface_container
-                if (c.surface_container_high) surface_container_high = c.surface_container_high
-                if (c.shadow) shadow = c.shadow
-                if (c.on_surface) on_surface = c.on_surface
-                if (c.on_surface_variant) on_surface_variant = c.on_surface_variant
-                return true
-            } catch (e) {
-                console.log("Failed to parse quickshell colors: " + e)
-                return false
-            }
-        }
-    }
+    property alias isOpen: state.isOpen
+    property bool ready: state.ready
 
     property QtObject tokens: QtObject {
         property real panel_bg_alpha: 0.7
@@ -140,31 +65,48 @@ PanelWindow {
         }
     }
 
-    Process {
-        id: colorReader
-        command: ["cat", Quickshell.env("HOME") + "/.config/shayar/colors/quickshell.json"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                root.colorsLoaded = root.colors.updateFromJson(this.text.trim())
-                root.ready = root.colorsLoaded && root.tokensLoaded
-                colorReader.running = false
-            }
-        }
-        running: true
+    BaseState.BaseState {
+        id: state
+        parent: root
+        tokens: root.tokens
+        ipcTarget: "calendar"
     }
 
-    Process {
-        id: tokenReader
-        command: ["cat", Quickshell.env("HOME") + "/.config/shayar/colors/quickshell-tokens.json"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                root.tokensLoaded = root.tokens.updateFromJson(this.text.trim())
-                root.ready = root.colorsLoaded && root.tokensLoaded
-                tokenReader.running = false
-            }
-        }
-        running: true
+    WlrLayershell.layer: WlrLayer.Overlay
+    exclusionMode: WlrLayershell.Ignore
+    anchors.left: true
+    anchors.top: true
+
+    implicitWidth: 320
+    implicitHeight: 380
+    color: "transparent"
+
+    margins { top: root.tokens.calendar_margin_top; left: root.tokens.calendar_margin_left }
+
+    HyprlandFocusGrab {
+        windows: [root]
+        active: state.isOpen
+        onCleared: { if (state.isOpen) state.isOpen = false }
     }
+
+    Shortcut {
+        sequence: "Escape"
+        onActivated: { if (state.isOpen) state.isOpen = false }
+    }
+
+    onIsOpenChanged: {
+        if (state.isOpen) {
+            var now = new Date()
+            todayDate = now.getDate()
+            todayMonth = now.getMonth()
+            todayYear = now.getFullYear()
+            currentMonth = todayMonth
+            currentYear = todayYear
+            updateCalendar(currentYear, currentMonth)
+        }
+    }
+
+    visible: state.ready && (state.isOpen || popAnim.running)
 
     property var monthNames: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
     property var dayNames: ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
@@ -184,12 +126,16 @@ PanelWindow {
         if (currentMonth === 0) { currentMonth = 11; currentYear-- }
         else currentMonth--
         updateCalendar(currentYear, currentMonth)
+        calendarGrid.opacity = 0
+        calendarGridOpacityAnim.start()
     }
 
     function nextMonth() {
         if (currentMonth === 11) { currentMonth = 0; currentYear++ }
         else currentMonth++
         updateCalendar(currentYear, currentMonth)
+        calendarGrid.opacity = 0
+        calendarGridOpacityAnim.start()
     }
 
     function goToday() {
@@ -243,7 +189,7 @@ PanelWindow {
             layer.enabled: true
             layer.effect: MultiEffect {
                 colorization: 1.0
-                colorizationColor: root.colors.primary
+                colorizationColor: state.colors.primary
             }
         }
     }
@@ -260,14 +206,14 @@ PanelWindow {
 
         background: Rectangle {
             color: "transparent"
-            border.color: root.colors.primary
+            border.color: state.colors.primary
             border.width: root.tokens.border_width
             radius: 8
         }
         contentItem: Text {
             text: parent.text
             font.pixelSize: root.tokens.font_size_body
-            color: root.colors.primary
+            color: state.colors.primary
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             padding: 4; leftPadding: 10; rightPadding: 10
@@ -279,8 +225,8 @@ PanelWindow {
         anchors.fill: parent
         anchors.margins: 0
 
-        property real popScale: root.isOpen ? 1.0 : 0.85
-        property real popOpacity: root.isOpen ? 1.0 : 0.0
+        property real popScale: state.isOpen ? 1.0 : 0.85
+        property real popOpacity: state.isOpen ? 1.0 : 0.0
 
         Behavior on popScale {
             NumberAnimation { id: popAnim; duration: 200; easing.type: Easing.OutBack }
@@ -292,45 +238,11 @@ PanelWindow {
         transform: Scale { origin.x: 0; origin.y: 0; xScale: popContainer.popScale; yScale: popContainer.popScale }
         opacity: popContainer.popOpacity
 
-        Rectangle {
-            id: panelBg
+        GlassPanel.GlassPanel {
             anchors.fill: parent
+            colors: state.colors
+            tokens: root.tokens
             radius: root.tokens.calendar_radius
-            color: Qt.rgba(root.colors.surface_container.r, root.colors.surface_container.g, root.colors.surface_container.b, root.tokens.panel_bg_alpha)
-
-            layer.enabled: true
-            layer.effect: MultiEffect {
-                blurEnabled: true
-                blur: root.tokens.blur_strength
-                saturation: 0.0
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                radius: parent.radius
-                gradient: Gradient {
-                    orientation: Gradient.Vertical
-                    GradientStop { position: 0.0; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_top_alpha) }
-                    GradientStop { position: 0.3; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_mid_alpha) }
-                    GradientStop { position: 1.0; color: "transparent" }
-                }
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: 1
-                radius: parent.radius - 1
-                color: "transparent"
-                border.color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.border_alpha)
-                border.width: root.tokens.border_width
-            }
-        }
-
-        RectangularShadow {
-            anchors.fill: panelBg
-            radius: panelBg.radius
-            blur: 24
-            color: Qt.rgba(root.colors.shadow.r, root.colors.shadow.g, root.colors.shadow.b, root.tokens.shadow_alpha)
         }
 
         ColumnLayout {
@@ -347,7 +259,7 @@ PanelWindow {
                 Text {
                     Layout.preferredWidth: 130
                     text: monthNames[currentMonth] + " " + currentYear
-                    color: root.colors.on_surface
+                    color: state.colors.on_surface
                     font.pixelSize: root.tokens.font_size_title; font.weight: Font.Bold
                     horizontalAlignment: Text.AlignHCenter
                 }
@@ -359,7 +271,7 @@ PanelWindow {
                 TodayButton {}
             }
 
-            Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: root.colors.primary; opacity: 0.2 }
+            Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: state.colors.primary; opacity: 0.2 }
 
             RowLayout {
                 Layout.fillWidth: true; Layout.fillHeight: true; spacing: 8
@@ -370,7 +282,7 @@ PanelWindow {
                     Text {
                         Layout.fillWidth: true
                         text: "Wk"
-                        color: root.colors.on_surface_variant; opacity: 0.5
+                        color: state.colors.on_surface_variant; opacity: 0.5
                         font.pixelSize: root.tokens.font_size_small; font.weight: Font.Bold
                         horizontalAlignment: Text.AlignHCenter
                         Layout.bottomMargin: 3
@@ -380,7 +292,7 @@ PanelWindow {
                         Text {
                             Layout.fillWidth: true; Layout.fillHeight: true
                             text: model.weekNumber
-                            color: root.colors.primary; opacity: 0.6
+                            color: state.colors.primary; opacity: 0.6
                             font.pixelSize: root.tokens.font_size_small
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
@@ -388,7 +300,7 @@ PanelWindow {
                     }
                 }
 
-                Rectangle { implicitWidth: 1; Layout.fillHeight: true; color: root.colors.primary; opacity: 0.2 }
+                Rectangle { implicitWidth: 1; Layout.fillHeight: true; color: state.colors.primary; opacity: 0.2 }
 
                 ColumnLayout {
                     Layout.fillWidth: true; Layout.fillHeight: true; spacing: 3
@@ -400,7 +312,7 @@ PanelWindow {
                             Text {
                                 Layout.fillWidth: true
                                 text: modelData
-                                color: (index >= 5) ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.5) : root.colors.primary
+                                color: (index >= 5) ? Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, 0.5) : state.colors.primary
                                 font.pixelSize: root.tokens.font_size_body; font.weight: Font.Bold
                                 horizontalAlignment: Text.AlignHCenter
                             }
@@ -408,9 +320,19 @@ PanelWindow {
                     }
 
                     GridLayout {
+                        id: calendarGrid
                         columns: 7
                         Layout.fillWidth: true; Layout.fillHeight: true
                         rowSpacing: 3; columnSpacing: 3
+
+                        NumberAnimation {
+                            id: calendarGridOpacityAnim
+                            target: calendarGrid
+                            property: "opacity"
+                            from: 0; to: 1
+                            duration: 200
+                            easing.type: Easing.OutQuad
+                        }
 
                         Repeater {
                             model: dayModel
@@ -418,18 +340,18 @@ PanelWindow {
                             Rectangle {
                                 Layout.fillWidth: true; Layout.fillHeight: true
                                 radius: width / 2
-                                color: model.isToday ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.primary_alpha) : "transparent"
+                                color: model.isToday ? Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, root.tokens.primary_alpha) : "transparent"
 
                                 Rectangle {
                                     anchors.centerIn: parent
                                     width: parent.width; height: parent.height
                                     radius: width / 2
-                                    color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.4)
+                                    color: Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, 0.4)
                                     visible: model.isToday
                                     SequentialAnimation on scale {
                                         running: model.isToday
                                         loops: Animation.Infinite
-                                        NumberAnimation { to: 1.5; duration: 1500; easing.type: Easing.OutSine }
+                                        NumberAnimation { to: 1.15; duration: 1500; easing.type: Easing.OutSine }
                                         NumberAnimation { to: 1.0; duration: 1000; easing.type: Easing.InSine }
                                     }
                                     SequentialAnimation on opacity {
@@ -445,13 +367,13 @@ PanelWindow {
                                     text: model.day
                                     font.pixelSize: root.tokens.font_size_body
                                     font.weight: model.isToday ? Font.Bold : Font.Normal
-                                    color: model.isToday ? root.colors.surface_dim : ((index % 7 >= 5) ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.8) : root.colors.on_surface)
+                                    color: model.isToday ? state.colors.surface_dim : ((index % 7 >= 5) ? Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, 0.8) : state.colors.on_surface)
                                     opacity: model.isCurrentMonth ? 1 : 0.3
                                 }
 
                                 Rectangle {
                                     width: 3; height: 3; radius: 1.5
-                                    color: root.colors.primary
+                                    color: state.colors.primary
                                     anchors.bottom: parent.bottom
                                     anchors.bottomMargin: 4
                                     anchors.horizontalCenter: parent.horizontalCenter
@@ -463,12 +385,5 @@ PanelWindow {
                 }
             }
         }
-    }
-
-    IpcHandler {
-        target: "calendar"
-        function toggle(): void { root.isOpen = !root.isOpen }
-        function open(): void { root.isOpen = true }
-        function close(): void { root.isOpen = false }
     }
 }

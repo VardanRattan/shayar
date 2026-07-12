@@ -1,7 +1,7 @@
 /*
  * Shayar Desktop theme for Waybar
- * Inspired by the meditative Shayar UI
  * Visual reference: design-tokens.json
+ * Token placeholders resolved at launch by launch.sh
  */
 
 /* Fallback colors if matugen-generated colors.css is missing */
@@ -17,7 +17,7 @@
 
 /* Reset & Global Font Rules */
 * {
-    font-family: 'Rubik', 'JetBrains Mono', 'Font Awesome 6 Free', 'Font Awesome 6 Brands', sans-serif;
+    font-family: @DT_TYPOGRAPHY_WAYBAR_FONT_FAMILY@;
     border: none;
     border-radius: 0px;
     font-weight: 500;
@@ -35,30 +35,30 @@ window#waybar {
  */
 #group-center-pill,
 #group-right-pill {
-    background-color: alpha(@surface, 0.5);
-    border: 1px solid alpha(@on_surface, 0.05);
+    background-color: alpha(@surface, @DT_OPACITY_WAYBAR_PILL_BACKGROUND@);
+    border: 1px solid alpha(@on_surface, @DT_OPACITY_WAYBAR_BORDER_ALPHA@);
     border-radius: 10px;
-    padding: 4px 20px;
-    margin: 4px 6px;
-    box-shadow: 0 10px 30px -5px alpha(@shadow, 0.3), 0 0 15px alpha(@primary, 0.05);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: @DT_SPACING_WAYBAR_PILL_PADDING_Y@px @DT_SPACING_WAYBAR_PILL_PADDING_X@px;
+    margin: @DT_SPACING_WAYBAR_PILL_MARGIN_Y@px @DT_SPACING_WAYBAR_PILL_MARGIN_X@px;
+    box-shadow: @DT_SHADOW_WAYBAR@ alpha(@shadow, @DT_OPACITY_WAYBAR_SHADOW_ALPHA@), @DT_SHADOW_WAYBAR_GLOW@ alpha(@primary, @DT_OPACITY_WAYBAR_GLOW_ALPHA@);
+    transition: all @DT_ANIMATION_WAYBAR_TRANSITION@;
 }
 
 /* Hover effect on pills */
 #group-center-pill:hover,
 #group-right-pill:hover {
-    background-color: alpha(@surface, 0.7);
-    border-color: alpha(@on_surface, 0.1);
-    box-shadow: 0 10px 30px -5px alpha(@shadow, 0.4), 0 0 20px alpha(@primary, 0.1);
+    background-color: alpha(@surface, @DT_OPACITY_WAYBAR_PILL_HOVER_BACKGROUND@);
+    border-color: alpha(@on_surface, @DT_OPACITY_WAYBAR_BORDER_HOVER_ALPHA@);
+    box-shadow: @DT_SHADOW_WAYBAR_HOVER@ alpha(@shadow, @DT_OPACITY_WAYBAR_SHADOW_HOVER_ALPHA@), @DT_SHADOW_WAYBAR_HOVER_GLOW@ alpha(@primary, @DT_OPACITY_WAYBAR_GLOW_HOVER_ALPHA@);
 }
 
 /* 
  * Left Pill: Clock & Date 
  */
 #clock {
-    font-size: 13px;
+    font-size: @DT_TYPOGRAPHY_WAYBAR_FONT_SIZE@px;
     color: alpha(@on_surface, 0.4);
-    padding: 4px 20px;
+    padding: @DT_SPACING_WAYBAR_PADDING_Y@px @DT_SPACING_WAYBAR_PILL_PADDING_X@px;
 }
 
 #clock:hover {
@@ -69,8 +69,8 @@ window#waybar {
  * Center Pill: Workspaces & Badge
  */
 #group-center-pill {
-    padding: 4px 14px;
-    margin: 4px 0px;
+    padding: @DT_SPACING_WAYBAR_CENTER_PADDING_Y@px @DT_SPACING_WAYBAR_CENTER_PADDING_X@px;
+    margin: @DT_SPACING_WAYBAR_PILL_MARGIN_Y@px 0px;
 }
 
 #workspaces {
@@ -81,13 +81,13 @@ window#waybar {
 
 #workspaces button {
     padding: 0px;
-    margin: 0px 12px;
-    font-size: 18px;
+    margin: 0px @DT_SPACING_WAYBAR_WORKSPACE_SPACING@px;
+    font-size: @DT_SPACING_WAYBAR_WORKSPACE_SIZE@px;
     background: transparent;
-    color: alpha(@on_surface_variant, 0.7);
+    color: alpha(@on_surface_variant, @DT_OPACITY_WAYBAR_WORKSPACE_INACTIVE@);
     border: none;
     box-shadow: none;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all @DT_ANIMATION_WAYBAR_TRANSITION@;
 }
 
 #workspaces button.active {
@@ -98,7 +98,7 @@ window#waybar {
 }
 
 #workspaces button:hover {
-    color: alpha(@on_surface_variant, 1.0);
+    color: alpha(@on_surface_variant, @DT_OPACITY_WAYBAR_WORKSPACE_HOVER@);
     background: transparent;
     box-shadow: none;
 }
@@ -107,7 +107,7 @@ window#waybar {
  * Right Pill: System Status 
  */
 #group-right-pill {
-    padding: 4px 20px;
+    padding: @DT_SPACING_WAYBAR_PADDING_Y@px @DT_SPACING_WAYBAR_PILL_PADDING_X@px;
 }
 
 #pulseaudio,
@@ -116,10 +116,10 @@ window#waybar {
 #battery,
 #custom-notification,
 #custom-exit {
-    font-size: 18px;
-    padding: 0 10px;
+    font-size: @DT_TYPOGRAPHY_WAYBAR_ICON_FONT_SIZE@px;
+    padding: 0 @DT_SPACING_WAYBAR_ICON_PADDING@px;
     color: @on_surface;
-    transition: all 0.2s ease;
+    transition: all @DT_ANIMATION_WAYBAR_HOVER_TRANSITION@;
 }
 
 #pulseaudio,
@@ -140,7 +140,7 @@ window#waybar {
 
 #battery {
     font-family: "JetBrains Mono", sans-serif;
-    font-size: 14px;
+    font-size: @DT_TYPOGRAPHY_WAYBAR_BATTERY_FONT_SIZE@px;
 }
 
 #battery.charging,
@@ -161,14 +161,17 @@ window#waybar {
 
 /* Divider inside Right Pill */
 #custom-divider {
-    color: alpha(@outline, 0.2);
-    font-size: 13px;
-    padding: 0 6px;
+    color: alpha(@outline, @DT_OPACITY_WAYBAR_DIVIDER_ALPHA@);
+    font-size: @DT_TYPOGRAPHY_WAYBAR_FONT_SIZE@px;
+    padding: 0 @DT_SPACING_WAYBAR_DIVIDER_PADDING@px;
 }
 
 /* SwayNC Notifications */
 #custom-notification {
     color: @on_surface;
+}
+#custom-notification:hover {
+    color: @primary;
 }
 #custom-notification.active {
     color: @primary;
@@ -176,10 +179,8 @@ window#waybar {
 
 /* Power Exit Button */
 #custom-exit {
-    color: alpha(@tertiary_container, 0.85);
+    color: alpha(@tertiary_container, @DT_OPACITY_WAYBAR_TERTIARY_ALPHA@);
 }
 #custom-exit:hover {
     color: @tertiary_container;
 }
-
-

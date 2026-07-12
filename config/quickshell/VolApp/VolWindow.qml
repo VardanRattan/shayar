@@ -1,93 +1,20 @@
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
-import Quickshell.Io
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Effects
 
+import "../shared/BaseState.qml" as BaseState
+import "../shared/GlassPanel.qml" as GlassPanel
+
 PanelWindow {
     id: root
 
-    function reload(): void {
-        colorReader.running = false
-        colorReader.running = true
-        tokenReader.running = false
-        tokenReader.running = true
-    }
+    function reload(): void { state.reload() }
 
-    WlrLayershell.layer: WlrLayer.Overlay
-    exclusionMode: WlrLayershell.Ignore
-
-    implicitWidth: 200
-    implicitHeight: 45
-    color: "transparent"
-    anchors.right: true
-    anchors.top: true
-
-    HyprlandFocusGrab {
-        windows: [root]
-        active: root.isOpen
-        onCleared: { if (root.isOpen) root.isOpen = false }
-    }
-
-    Shortcut {
-        sequence: "Escape"
-        onActivated: { if (root.isOpen) root.isOpen = false }
-    }
-
-    property bool isOpen: false
-    property bool ready: false
-    property bool colorsLoaded: false
-    property bool tokensLoaded: false
-
-    visible: ready && (isOpen || root.slideOffset !== 120)
-
-    property int slideOffset: isOpen ? 0 : 120
-
-    Behavior on slideOffset {
-        NumberAnimation {
-            id: slideAnim
-            duration: 350
-            easing.type: Easing.OutQuint
-        }
-    }
-
-    margins { right: root.slideOffset; top: root.tokens.calendar_margin_top }
-
-    property QtObject colors: QtObject {
-        property color background: "#12131b"
-        property color primary: "#acc7ff"
-        property color on_primary: "#062f64"
-        property color on_surface: "#e4e1ee"
-        property color surface_dim: "#12131b"
-        property color surface_container: "#1f1f28"
-        property color surface_container_high: "#292932"
-        property color surface_bright: "#393842"
-        property color shadow: "#000000"
-        property color on_surface_variant: "#c4c6d1"
-
-        function updateFromJson(jsonString) {
-            try {
-                var c = JSON.parse(jsonString)
-                if (!c || Object.keys(c).length === 0) return false
-                if (c.background) background = c.background
-                if (c.primary) primary = c.primary
-                if (c.on_primary) on_primary = c.on_primary
-                if (c.on_surface) on_surface = c.on_surface
-                if (c.surface_dim) surface_dim = c.surface_dim
-                if (c.surface_container) surface_container = c.surface_container
-                if (c.surface_container_high) surface_container_high = c.surface_container_high
-                if (c.surface_bright) surface_bright = c.surface_bright
-                if (c.shadow) shadow = c.shadow
-                if (c.on_surface_variant) on_surface_variant = c.on_surface_variant
-                return true
-            } catch (e) {
-                console.log("Failed to parse quickshell colors: " + e)
-                return false
-            }
-        }
-    }
+    property alias isOpen: state.isOpen
+    property bool ready: state.ready
 
     property QtObject tokens: QtObject {
         property int panel_width: 200
@@ -129,6 +56,10 @@ PanelWindow {
                 if (t.hover_border_alpha !== undefined) hover_border_alpha = t.hover_border_alpha
                 if (t.font_size_label !== undefined) font_size_label = t.font_size_label
                 if (t.calendar_margin_top !== undefined) calendar_margin_top = t.calendar_margin_top
+                if (t.track_alpha !== undefined) track_alpha = t.track_alpha
+                if (t.thumb_size !== undefined) thumb_size = t.thumb_size
+                if (t.bar_radius !== undefined) bar_radius = t.bar_radius
+                if (t.bar_min_height !== undefined) bar_min_height = t.bar_min_height
                 return true
             } catch (e) {
                 console.log("Failed to parse quickshell tokens: " + e)
@@ -137,30 +68,49 @@ PanelWindow {
         }
     }
 
-    Process {
-        id: colorReader
-        command: ["cat", Quickshell.env("HOME") + "/.config/shayar/colors/quickshell.json"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                root.colorsLoaded = root.colors.updateFromJson(this.text.trim())
-                root.ready = root.colorsLoaded && root.tokensLoaded
-                colorReader.running = false
-            }
-        }
-        running: true
+    BaseState.BaseState {
+        id: state
+        parent: root
+        tokens: root.tokens
+        ipcTarget: "vol"
     }
 
-    Process {
-        id: tokenReader
-        command: ["cat", Quickshell.env("HOME") + "/.config/shayar/colors/quickshell-tokens.json"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                root.tokensLoaded = root.tokens.updateFromJson(this.text.trim())
-                root.ready = root.colorsLoaded && root.tokensLoaded
-                tokenReader.running = false
-            }
+    WlrLayershell.layer: WlrLayer.Overlay
+    exclusionMode: WlrLayershell.Ignore
+
+    implicitWidth: 200
+    implicitHeight: 45
+    color: "transparent"
+    anchors.right: true
+    anchors.top: true
+
+    HyprlandFocusGrab {
+        windows: [root]
+        active: state.isOpen
+        onCleared: { if (state.isOpen) state.isOpen = false }
+    }
+
+    Shortcut {
+        sequence: "Escape"
+        onActivated: { if (state.isOpen) state.isOpen = false }
+    }
+
+    visible: state.ready && (state.isOpen || root.slideOffset !== 120)
+
+    property int slideOffset: state.isOpen ? 0 : 120
+
+    Behavior on slideOffset {
+        NumberAnimation {
+            id: slideAnim
+            duration: 350
+            easing.type: Easing.OutQuint
         }
-        running: true
+    }
+
+    margins { right: root.slideOffset; top: root.tokens.calendar_margin_top }
+
+    onIsOpenChanged: {
+        if (state.isOpen) volRow.forceActiveFocus()
     }
 
     property real volume: 0.5
@@ -185,12 +135,12 @@ PanelWindow {
                 }
             }
         }
-        running: root.isOpen
+        running: state.isOpen
     }
 
     Timer {
         interval: 500
-        running: root.isOpen
+        running: state.isOpen
         repeat: true
         onTriggered: volumePoller.running = true
     }
@@ -212,45 +162,10 @@ PanelWindow {
         anchors.top: parent.top
         anchors.right: parent.right
 
-        Rectangle {
-            id: panelBg
+        GlassPanel.GlassPanel {
             anchors.fill: parent
-            radius: root.tokens.panel_radius
-            color: Qt.rgba(root.colors.surface_container.r, root.colors.surface_container.g, root.colors.surface_container.b, root.tokens.panel_bg_alpha)
-
-            layer.enabled: true
-            layer.effect: MultiEffect {
-                blurEnabled: true
-                blur: root.tokens.blur_strength
-                saturation: 0.0
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                radius: parent.radius
-                gradient: Gradient {
-                    orientation: Gradient.Vertical
-                    GradientStop { position: 0.0; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_top_alpha) }
-                    GradientStop { position: 0.3; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_mid_alpha) }
-                    GradientStop { position: 1.0; color: "transparent" }
-                }
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: 1
-                radius: parent.radius - 1
-                color: "transparent"
-                border.color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.border_alpha)
-                border.width: root.tokens.border_width
-            }
-        }
-
-        RectangularShadow {
-            anchors.fill: panelBg
-            radius: panelBg.radius
-            blur: 24
-            color: Qt.rgba(root.colors.shadow.r, root.colors.shadow.g, root.colors.shadow.b, root.tokens.shadow_alpha)
+            colors: state.colors
+            tokens: root.tokens
         }
 
         RowLayout {
@@ -258,6 +173,17 @@ PanelWindow {
             anchors.fill: parent
             anchors.margins: 8
             spacing: 8
+            focus: true
+
+            Keys.onLeftPressed: {
+                var newVol = Math.max(0, root.volume - 0.05)
+                root.setVolume(newVol)
+            }
+            Keys.onRightPressed: {
+                var newVol = Math.min(1.5, root.volume + 0.05)
+                root.setVolume(newVol)
+            }
+            Keys.onSpacePressed: root.toggleMute()
 
             Item {
                 width: root.tokens.icon_size + 4
@@ -266,7 +192,7 @@ PanelWindow {
                     id: volIcon
                     anchors.centerIn: parent
                     text: (root.volume > 0.5 ? "\uF028" : root.volume > 0 ? "\uF027" : "\uF026")
-                    color: root.isMuted ? root.colors.on_surface_variant : root.colors.primary
+                    color: root.isMuted ? state.colors.on_surface_variant : state.colors.primary
                     font.pixelSize: root.tokens.icon_size
                     font.family: "Symbols Nerd Font Mono"
                 }
@@ -290,14 +216,14 @@ PanelWindow {
                 Layout.fillWidth: true
                 Layout.preferredHeight: root.tokens.bar_min_height
                 radius: root.tokens.bar_radius
-                color: Qt.rgba(root.colors.on_surface.r, root.colors.on_surface.g, root.colors.on_surface.b, root.tokens.track_alpha)
+                color: Qt.rgba(state.colors.on_surface.r, state.colors.on_surface.g, state.colors.on_surface.b, root.tokens.track_alpha)
 
                 Rectangle {
                     id: volHighlight
                     width: parent.width * root.volume
                     height: parent.height
                     radius: parent.radius
-                    color: root.volume > 1.0 ? "#ff5555" : root.colors.primary
+                    color: root.volume > 1.0 ? "#ff5555" : state.colors.primary
                     Behavior on color { ColorAnimation { duration: 150 } }
 
                     Behavior on width {
@@ -310,7 +236,7 @@ PanelWindow {
                     width: root.tokens.thumb_size
                     height: root.tokens.thumb_size
                     radius: root.tokens.thumb_size / 2
-                    color: root.colors.on_surface
+                    color: state.colors.on_surface
                     anchors.verticalCenter: parent.verticalCenter
                     x: (parent.width - width) * root.volume
 
@@ -349,24 +275,22 @@ PanelWindow {
                         var newVol = Math.max(0, Math.min(1.5, mouseX / width))
                         root.setVolume(newVol)
                     }
+                    onWheel: function(wheelEvent) {
+                        var delta = wheelEvent.angleDelta.y > 0 ? 0.05 : -0.05
+                        var newVol = Math.max(0, Math.min(1.5, root.volume + delta))
+                        root.setVolume(newVol)
+                    }
                 }
             }
 
             Text {
                 text: Math.round(root.displayVolume * 100) + "%"
-                color: root.colors.on_surface
+                color: state.colors.on_surface
                 font.pixelSize: root.tokens.font_size_label
                 font.weight: Font.Medium
                 Layout.preferredWidth: 30
                 horizontalAlignment: Text.AlignRight
             }
         }
-    }
-
-    IpcHandler {
-        target: "vol"
-        function toggle(): void { root.isOpen = !root.isOpen }
-        function open(): void { root.isOpen = true }
-        function close(): void { root.isOpen = false }
     }
 }

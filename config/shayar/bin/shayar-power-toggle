@@ -24,4 +24,5 @@ ensure_qs
 qs -p "$QS_SHELL" ipc call calendar close
 qs -p "$QS_SHELL" ipc call net close
 qs -p "$QS_SHELL" ipc call bt close
+qs -p "$QS_SHELL" ipc call vol close
 qs -p "$QS_SHELL" ipc call power toggle

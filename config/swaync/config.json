@@ -30,6 +30,7 @@
   "scripts": {},
   "widgets": [
     "title",
+    "dnd",
     "notifications"
   ],
   "widget-config": {

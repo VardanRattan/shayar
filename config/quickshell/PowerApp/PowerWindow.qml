@@ -1,116 +1,22 @@
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
-import Quickshell.Io
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Effects
 
+import "../shared/BaseState.qml" as BaseState
+import "../shared/GlassPanel.qml" as GlassPanel
+
 PanelWindow {
     id: root
 
-    function reload(): void {
-        colorReader.running = false
-        colorReader.running = true
-        tokenReader.running = false
-        tokenReader.running = true
-    }
+    function reload(): void { state.reload() }
 
-    WlrLayershell.layer: WlrLayer.Overlay
-    exclusionMode: WlrLayershell.Ignore
-
-    implicitWidth: root.ready ? root.tokens.panel_width : 180
-    implicitHeight: column.implicitHeight + (root.ready ? root.tokens.button_height : 56)
-    color: "transparent"
-    anchors.right: true
-
-    HyprlandFocusGrab {
-        windows: [root]
-        active: root.isOpen
-        onCleared: { if (root.isOpen) root.isOpen = false }
-    }
-
-    Shortcut {
-        sequence: "Escape"
-        onActivated: { if (root.isOpen) root.isOpen = false }
-    }
-
-    property bool isOpen: false
-    property bool ready: false
-    property bool colorsLoaded: false
-    property bool tokensLoaded: false
-    property int selectedIndex: -1
+    property alias isOpen: state.isOpen
+    property bool ready: state.ready
     readonly property int buttonCount: 6
-
-    onIsOpenChanged: {
-        if (isOpen) {
-            selectedIndex = -1
-            column.forceActiveFocus()
-        }
-    }
-
-    function activateSelected() {
-        var commands = [
-            Quickshell.env("HOME") + "/.config/shayar/scripts/shayar-power -l",
-            Quickshell.env("HOME") + "/.config/shayar/scripts/shayar-power -s",
-            Quickshell.env("HOME") + "/.config/shayar/scripts/shayar-power -e",
-            Quickshell.env("HOME") + "/.config/hypr/scripts/power.sh hibernate",
-            Quickshell.env("HOME") + "/.config/shayar/scripts/shayar-power -r",
-            Quickshell.env("HOME") + "/.config/shayar/scripts/shayar-power -p"
-        ]
-        if (selectedIndex >= 0 && selectedIndex < commands.length) {
-            Quickshell.execDetached(["bash", "-c", commands[selectedIndex]])
-            root.isOpen = false
-        }
-    }
-
-    visible: ready && (isOpen || root.slideOffset !== -120)
-
-    property int slideOffset: isOpen ? 0 : -120
-
-    Behavior on slideOffset {
-        NumberAnimation {
-            id: slideAnim
-            duration: 350
-            easing.type: Easing.OutQuint
-        }
-    }
-
-    margins { right: root.slideOffset }
-
-    property QtObject colors: QtObject {
-        property color background: "#12131b"
-        property color primary: "#acc7ff"
-        property color on_primary: "#062f64"
-        property color on_surface: "#e4e1ee"
-        property color surface_dim: "#12131b"
-        property color surface_container: "#1f1f28"
-        property color surface_container_high: "#292932"
-        property color surface_bright: "#393842"
-        property color shadow: "#000000"
-        property color on_surface_variant: "#c4c6d1"
-
-        function updateFromJson(jsonString) {
-            try {
-                var c = JSON.parse(jsonString)
-                if (!c || Object.keys(c).length === 0) return false
-                if (c.background) background = c.background
-                if (c.primary) primary = c.primary
-                if (c.on_primary) on_primary = c.on_primary
-                if (c.on_surface) on_surface = c.on_surface
-                if (c.surface_dim) surface_dim = c.surface_dim
-                if (c.surface_container) surface_container = c.surface_container
-                if (c.surface_container_high) surface_container_high = c.surface_container_high
-                if (c.surface_bright) surface_bright = c.surface_bright
-                if (c.shadow) shadow = c.shadow
-                if (c.on_surface_variant) on_surface_variant = c.on_surface_variant
-                return true
-            } catch (e) {
-                console.log("Failed to parse quickshell colors: " + e)
-                return false
-            }
-        }
-    }
+    property int selectedIndex: -1
 
     property QtObject tokens: QtObject {
         property int panel_width: 180
@@ -166,31 +72,67 @@ PanelWindow {
         }
     }
 
-    Process {
-        id: colorReader
-        command: ["cat", Quickshell.env("HOME") + "/.config/shayar/colors/quickshell.json"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                root.colorsLoaded = root.colors.updateFromJson(this.text.trim())
-                root.ready = root.colorsLoaded && root.tokensLoaded
-                colorReader.running = false
-            }
-        }
-        running: true
+    BaseState.BaseState {
+        id: state
+        parent: root
+        tokens: root.tokens
+        ipcTarget: "power"
     }
 
-    Process {
-        id: tokenReader
-        command: ["cat", Quickshell.env("HOME") + "/.config/shayar/colors/quickshell-tokens.json"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                root.tokensLoaded = root.tokens.updateFromJson(this.text.trim())
-                root.ready = root.colorsLoaded && root.tokensLoaded
-                tokenReader.running = false
-            }
-        }
-        running: true
+    WlrLayershell.layer: WlrLayer.Overlay
+    exclusionMode: WlrLayershell.Ignore
+
+    implicitWidth: root.ready ? root.tokens.panel_width : 180
+    implicitHeight: column.implicitHeight + (root.ready ? root.tokens.button_height : 56)
+    color: "transparent"
+    anchors.right: true
+
+    HyprlandFocusGrab {
+        windows: [root]
+        active: state.isOpen
+        onCleared: { if (state.isOpen) state.isOpen = false }
     }
+
+    Shortcut {
+        sequence: "Escape"
+        onActivated: { if (state.isOpen) state.isOpen = false }
+    }
+
+    onIsOpenChanged: {
+        if (state.isOpen) {
+            selectedIndex = -1
+            column.forceActiveFocus()
+        }
+    }
+
+    function activateSelected() {
+        var commands = [
+            Quickshell.env("HOME") + "/.config/shayar/scripts/shayar-power -l",
+            Quickshell.env("HOME") + "/.config/shayar/scripts/shayar-power -s",
+            Quickshell.env("HOME") + "/.config/shayar/scripts/shayar-power -e",
+            Quickshell.env("HOME") + "/.config/hypr/scripts/power.sh hibernate",
+            Quickshell.env("HOME") + "/.config/shayar/scripts/shayar-power -r",
+            Quickshell.env("HOME") + "/.config/shayar/scripts/shayar-power -p"
+        ]
+        if (selectedIndex >= 0 && selectedIndex < commands.length) {
+            Quickshell.execDetached(["bash", "-c", commands[selectedIndex]])
+            state.isOpen = false
+        }
+    }
+
+    visible: state.ready && (state.isOpen || root.slideOffset !== -120)
+
+    property int slideOffset: state.isOpen ? 0 : -120
+
+    Behavior on slideOffset {
+        NumberAnimation {
+            id: slideAnim
+            duration: 350
+            easing.type: Easing.OutQuint
+        }
+    }
+
+    margins { right: root.slideOffset }
 
     Item {
         id: panelContainer
@@ -198,47 +140,10 @@ PanelWindow {
         height: column.implicitHeight + root.tokens.button_height
         anchors.centerIn: parent
 
-        Rectangle {
-            id: panelBg
-            width: 80
-            height: parent.height
-            anchors.right: parent.right
-            radius: root.tokens.panel_radius
-            color: Qt.rgba(root.colors.surface_container.r, root.colors.surface_container.g, root.colors.surface_container.b, root.tokens.panel_bg_alpha)
-
-            layer.enabled: true
-            layer.effect: MultiEffect {
-                blurEnabled: true
-                blur: root.tokens.blur_strength
-                saturation: 0.0
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                radius: parent.radius
-                gradient: Gradient {
-                    orientation: Gradient.Vertical
-                    GradientStop { position: 0.0; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_top_alpha) }
-                    GradientStop { position: 0.3; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_mid_alpha) }
-                    GradientStop { position: 1.0; color: "transparent" }
-                }
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: 1
-                radius: parent.radius - 1
-                color: "transparent"
-                border.color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.border_alpha)
-                border.width: root.tokens.border_width
-            }
-        }
-
-        RectangularShadow {
-            anchors.fill: panelBg
-            radius: panelBg.radius
-            blur: 24
-            color: Qt.rgba(root.colors.shadow.r, root.colors.shadow.g, root.colors.shadow.b, root.tokens.shadow_alpha)
+        GlassPanel.GlassPanel {
+            anchors.fill: parent
+            colors: state.colors
+            tokens: root.tokens
         }
 
         ColumnLayout {
@@ -272,9 +177,9 @@ PanelWindow {
                 implicitWidth: root.tokens.button_width
                 implicitHeight: root.tokens.button_height
 
-                opacity: root.isOpen ? 1 : 0
+                opacity: state.isOpen ? 1 : 0
                 transform: Translate {
-                    x: root.isOpen ? 0 : 40
+                    x: state.isOpen ? 0 : 40
                     Behavior on x {
                         SequentialAnimation {
                             PauseAnimation { duration: btn.btnIndex * 40 }
@@ -295,7 +200,7 @@ PanelWindow {
                     NumberAnimation { to: 1.05; duration: 600; easing.type: Easing.InOutSine }
                     NumberAnimation { to: 1.0; duration: 600; easing.type: Easing.InOutSine }
                 }
-                scale: btn.isSelected ? 1.05 : 1.0
+                scale: btn.isSelected ? 1.05 : (mouseArea.containsMouse ? 1.05 : 1.0)
                 Behavior on scale {
                     enabled: !btn.isSelected
                     NumberAnimation { duration: 200 }
@@ -309,7 +214,7 @@ PanelWindow {
                     height: root.tokens.label_height
                     width: (mouseArea.containsMouse || btn.isSelected) ? labelText.implicitWidth + 24 : 0
                     radius: root.tokens.label_radius
-                    color: Qt.rgba(root.colors.surface_container.r, root.colors.surface_container.g, root.colors.surface_container.b, root.tokens.label_alpha)
+                    color: Qt.rgba(state.colors.surface_container.r, state.colors.surface_container.g, state.colors.surface_container.b, root.tokens.label_alpha)
                     opacity: width > 0 ? 1 : 0
                     clip: true
 
@@ -325,7 +230,7 @@ PanelWindow {
                         anchors.margins: 1
                         radius: parent.radius - 1
                         color: "transparent"
-                        border.color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.border_alpha)
+                        border.color: Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, root.tokens.border_alpha)
                         border.width: root.tokens.border_width
                     }
 
@@ -333,7 +238,7 @@ PanelWindow {
                         id: labelText
                         anchors.centerIn: parent
                         text: btn.label
-                        color: root.colors.on_surface
+                        color: state.colors.on_surface
                         font.pixelSize: root.tokens.font_size_label
                         font.weight: Font.Medium
                     }
@@ -348,8 +253,8 @@ PanelWindow {
                     radius: root.tokens.icon_circle_size / 2
                     color: mouseArea.containsMouse || btn.isSelected
                         ? "transparent"
-                        : Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.primary_alpha)
-                    border.color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, mouseArea.containsMouse || btn.isSelected ? root.tokens.hover_border_alpha : 0)
+                        : Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, root.tokens.primary_alpha)
+                    border.color: Qt.rgba(state.colors.primary.r, state.colors.primary.g, state.colors.primary.b, mouseArea.containsMouse || btn.isSelected ? root.tokens.hover_border_alpha : 0)
                     border.width: root.tokens.border_width
 
                     Behavior on color {
@@ -373,8 +278,8 @@ PanelWindow {
                         layer.effect: MultiEffect {
                             colorization: 1.0
                             colorizationColor: mouseArea.containsMouse || btn.isSelected
-                                ? root.colors.primary
-                                : root.colors.surface_dim
+                                ? state.colors.primary
+                                : state.colors.surface_dim
                         }
                         scale: mouseArea.pressed ? 0.8 : 1.0
                         rotation: mouseArea.pressed ? 8 : 0
@@ -396,7 +301,7 @@ PanelWindow {
                             resetTimer.start()
                         } else {
                             Quickshell.execDetached(["bash", "-c", btn.action])
-                            root.isOpen = false
+                            state.isOpen = false
                         }
                     }
                     Timer {
@@ -450,12 +355,5 @@ PanelWindow {
                 btnIndex: 5
             }
         }
-    }
-
-    IpcHandler {
-        target: "power"
-        function toggle(): void { root.isOpen = !root.isOpen }
-        function open(): void { root.isOpen = true }
-        function close(): void { root.isOpen = false }
     }
 }

@@ -1,46 +1,32 @@
-# Shayar Dotfiles
+# Shayar
 
-> **Shayar** (Urdu: شاعر, meaning *poet*). A desktop shouldn't just be a collection of configs fighting for screen space—it should tell a cohesive story. 
+> **Shayar** (Urdu: شاعر, meaning *poet*)
 
-Shayar is built on the philosophy that theming should be completely hands-off. You pick a wallpaper, and the entire system instantly adapts its colors to match. Your terminal, status bar, launcher, lock screen, notifications, and shells all pull from a single, unified palette generated on the fly. 
+A Hyprland rice built on one idea: pick a wallpaper, and the entire desktop adapts. Colors, borders, shadows, animations — everything pulls from a single palette generated on the fly. No hardcoded values. No manual theming. Just wallpaper-driven cohesion.
 
-Nothing lives in your actual `~/.config` folder. Everything is symlinked directly from this repository. This means your configuration is version-controlled, portable, clean, and impossible to break.
+Built on the modular foundation of [ML4W Dotfiles](https://github.com/mylinuxforwork/dotfiles) by Stephan Raabe. GPL-3.0.
 
-Built on the rock-solid modular foundation of the [ML4W Dotfiles](https://github.com/mylinuxforwork/dotfiles) by Stephan Raabe. Shayar inherits the GPL-3.0 license and the core plumbing that makes Hyprland feel like home. If you enjoy this setup, please drop a star on Stephan's repository!
+---
+
+## What you get
+
+- **Wallpaper-driven theming** — one wallpaper change recolors terminal, bar, launcher, lock screen, notifications, and applets
+- **Single source of truth** — `design-tokens.json` (252 tokens) drives every visual value
+- **Glass UI** — frosted panels with blur, gradient borders, and depth-aware shadows
+- **Quickshell applets** — native QML power menu, calendar, WiFi, Bluetooth, and volume panels
+- **Zero `~/.config` pollution** — everything symlinks from this repo
 
 ---
 
 ## Screenshots
+
 <p align="center">
   <img src="screenshots/desktop.png" alt="Shayar Desktop" width="800"/>
-  <br>
-  <em>Default wallpaper. A full desktop screenshot (pill bar, rofi, notifications, lockscreen) coming soon.</em>
 </p>
 
 ---
 
-## Prerequisites & Distro Support
-
-Shayar requires a rolling-release distribution to satisfy Hyprland's bleeding-edge Wayland dependencies. 
-
-| Distribution | Support Level | Notes |
-| :--- | :--- | :--- |
-| **Arch Linux (EndeavourOS, Garuda)** | 🟢 Tier 1 (Native) | Fully automated install via provided install.sh script. |
-| **Fedora** | 🟡 Tier 2 (Community) | Partially automated. Requires manual compilation of `matugen`, `quickshell`, and `awww-daemon`. |
-| **Ubuntu / Debian** | 🔴 Unsupported | Packages in `apt` are too old to run modern Hyprland without crashing. |
-| **NixOS** | 🔴 Unsupported | Requires flakes (community PRs welcome). |
-
-Before you kick off the installation, make sure you have:
-*   **Hyprland** installed and running.
-*   The essentials: `git`, `fzf`, `grim`, `slurp`, `wl-copy`, `jq`, and `gum`.
-*   **Awww daemon** (for handling wallpaper states).
-*   **Matugen** (the engine driving our Material You palette generation).
-
----
-
-## Getting Started
-
-Clone the repository to your home folder and let the linking script handle the rest:
+## Install
 
 ```bash
 git clone https://github.com/VardanRattan/shayar.git ~/shayar
@@ -49,84 +35,97 @@ cd ~/shayar
 ```
 
 > [!IMPORTANT]
-> **Do not copy files manually.** The entire architecture relies on symlinks. When you pull changes or edit a file, the changes are tracked in git and apply to your desktop instantly.
+> **Never copy files manually.** The architecture uses symlinks — edits in the repo apply instantly, and `git pull` updates your desktop.
+
+### Requirements
+
+| Dependency | Role |
+|:--|:--|
+| Hyprland | Window manager |
+| awww-daemon | Wallpaper setter |
+| matugen | Material You color generator |
+| quickshell | Qt6 applet host |
+| fzf, jq, gum | CLI tools |
+| grim, slurp, wl-copy | Screenshots |
+
+### Distro support
+
+| Distro | Status |
+|:--|:--|
+| Arch (EndeavourOS, Garuda) | Native — automated install |
+| Fedora | Community — manual matugen/quickshell build |
+| Ubuntu/Debian | Unsupported (packages too old) |
 
 ---
 
-## System Architecture
+## Architecture
 
-The link script creates symlinks from this repository directly into `~/.config/`. Here is the breakdown:
-
-| Path | Component | Role |
-| :--- | :--- | :--- |
-| `hypr/` | **Hyprland** | Window manager, custom animations, keybinds, and window rules. |
-| `waybar/` | **Waybar** | Minimal status bar with glass theme. |
-| `rofi/` | **Rofi** | Fuzzy app launcher, clipboard tracker, and custom selector menus. |
-| `swaync/` | **SwayNC** | Clean notification tray with quick-access hardware toggles. |
-| `kitty/` | **Kitty** | Truecolor GPU-accelerated terminal emulator. |
-| `shayar/` | **Core Scripts** | Back-end scripts, Matugen hooks, and listener processes. |
-| `bashrc/`, `zshrc/` | **Shells** | Modular configs sharing aliases, variables, and path optimizations. |
-| `quickshell/` | **Quickshell** | Native glass applets: power menu, calendar, WiFi, Bluetooth. |
-
----
-
-## The Dynamic Theming Pipeline
-
-When you pick a wallpaper:
-1. **Apply**: `shayar-wallpaper` sets the image via `awww-daemon`.
-2. **Generate**: `Matugen` extracts the dominant colors and builds a comprehensive Material Design 3 palette.
-3. **Propagate**: Matugen injects these color values across all components (`kitty`, `waybar`, `rofi`, window borders, GTK themes).
-4. **Reload**: Affected UI bars and notification daemons reload instantly in the background without interrupting your workflow.
-
-You can manually trigger a theme refresh by triggering a reload.
-
----
-
-## Daily Driver Bindings
-
-The `SUPER` key (Windows key) is your main interface modifier. Here are the core bindings to keep in memory:
-
-*   `SUPER + Return` — Open Terminal
-*   `SUPER + B` — Launch Web Browser
-*   `SUPER + E` — Open File Manager
-*   `SUPER + Q` — Close Active Window
-*   `SUPER + T` — Toggle Window Floating
-*   `SUPER + 1` through `0` — Switch Workspaces
-*   `SUPER + SHIFT + 1` through `0` — Send Window to Workspace
-*   `SUPER + CTRL + Return` — Open Rofi App Launcher
-*   `SUPER + CTRL + W` — Open Wallpaper Picker
-*   `SUPER + CTRL + W` — Set a Random Wallpaper
-*   `SUPER + V` — Open Clipboard History
-*   `SUPER + CTRL + L` — Power Menu
-*   `SUPER + CTRL + N` — Network Applet
-*   `SUPER + CTRL + B` — Bluetooth Applet
-*   `SUPER + PRINT` — Grab Screenshot (area/window selection)
-
-*For the complete list, check [default.lua](config/hypr/conf/keybindings/default.lua).*
-
----
-
-## Shell Shortcuts
-
-We share a common pool of productivity aliases:
-
-*   `apps` — Launches the fuzzy app drawer.
-*   `wallpaper` — Opens the terminal wallpaper selector.
-*   `screenshot` — Triggers the interactive snapshot tool.
-*   `quick` — Displays custom command bookmarks (`~/.quicklinks`).
-*   `wifi` — Runs a terminal NetworkManager wizard (`nmtui`).
-*   `updates` — Fetches and installs system updates (flatpaks, system packages, AUR).
-
----
-
-## Modifying & Updating
-
-To pull down the latest features and keep your workspace synced:
-
-```bash
-cd ~/shayar
-git pull
-./scripts/link.sh
+```
+wallpaper
+  → awww-daemon (sets image)
+  → matugen (extracts palette)
+  → design-tokens.json (single source of truth)
+  → per-component colors.* files
+  → all configs pick up new colors
+  → UI reloads instantly
 ```
 
-Because everything uses active symlinks, your local changes are never overwritten unless there's a git conflict, and system updates register the moment they are pulled down.
+| Path | Component |
+|:--|:--|
+| `hypr/` | Hyprland — Lua modular config, animations, keybinds |
+| `waybar/` | Status bar — glass pill theme, token-resolved CSS |
+| `rofi/` | App launcher — 5 config modes |
+| `swaync/` | Notification center — glass theme, DND toggle |
+| `kitty/` | Terminal — matugen colors, truecolor |
+| `quickshell/` | Applets — power, calendar, WiFi, BT, volume (QML) |
+| `shayar/` | Core — scripts, bin tools, design tokens, settings |
+| `bashrc/`, `zshrc/` | Shell configs — shared aliases |
+
+---
+
+## Keybinds
+
+| Key | Action | Key | Action |
+|:--|:--|:--|:--|
+| `SUPER+Return` | Terminal | `SUPER+CTRL+Return` | App launcher |
+| `SUPER+B` | Browser | `SUPER+CTRL+W` | Wallpaper picker |
+| `SUPER+E` | File manager | `SUPER+V` | Clipboard history |
+| `SUPER+Q` | Kill window | `SUPER+PRINT` | Screenshot |
+| `SUPER+F` | Fullscreen | `ALT+SPACE` | Settings menu |
+| `SUPER+T` | Float toggle | `SUPER+SHIFT+L` | Lock screen |
+| `SUPER+J` | Split toggle | `SUPER+CTRL+L` | Power menu |
+| `SUPER+1-0` | Workspace | `SUPER+CTRL+N` | Network applet |
+| `SUPER+SHIFT+1-0` | Move to workspace | `SUPER+CTRL+B` | Bluetooth applet |
+| `SUPER+S` | Special workspace | `SUPER+SHIFT+B` | Toggle statusbar |
+
+Full list: [default.lua](config/hypr/conf/keybindings/default.lua)
+
+---
+
+## Shell aliases
+
+| Alias | Command |
+|:--|:--|
+| `apps` | Fuzzy app drawer |
+| `wallpaper` | Terminal wallpaper picker |
+| `screenshot` | Interactive screenshot tool |
+| `quick` | Custom command bookmarks |
+| `wifi` | NetworkManager TUI |
+| `updates` | System update (pacman + flatpak) |
+| `lock` | Lock screen |
+
+---
+
+## Updating
+
+```bash
+cd ~/shayar && git pull && ./scripts/link.sh
+```
+
+Symlinks mean local edits survive pulls. Git conflicts are the only thing that overwrites your changes.
+
+---
+
+## License
+
+GPL-3.0 — inherited from [ML4W Dotfiles](https://github.com/mylinuxforwork/dotfiles).

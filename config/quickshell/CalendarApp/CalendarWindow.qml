@@ -22,11 +22,21 @@ PanelWindow {
     anchors.left: true
     anchors.top: true
 
-    implicitWidth: 320
-    implicitHeight: 380
+    implicitWidth: root.ready ? root.tokens.calendar_width : 320
+    implicitHeight: root.ready ? root.tokens.calendar_height : 380
     color: "transparent"
 
-    margins { top: root.tokens.calendar_margin_top; left: root.tokens.calendar_margin_left }
+    margins {
+        left: root.ready ? root.tokens.calendar_margin_left : 12
+        top: root.ready ? root.tokens.waybar_clearance : 42
+    }
+
+    Behavior on margins.left {
+        NumberAnimation { duration: 350; easing.type: Easing.OutQuint }
+    }
+    Behavior on margins.top {
+        NumberAnimation { duration: 350; easing.type: Easing.OutQuint }
+    }
 
     HyprlandFocusGrab {
         windows: [root]
@@ -40,6 +50,7 @@ PanelWindow {
     }
 
     property bool isOpen: false
+    property bool pendingOpen: false
     property bool ready: false
     property bool colorsLoaded: false
     property bool tokensLoaded: false
@@ -53,10 +64,13 @@ PanelWindow {
             currentMonth = todayMonth
             currentYear = todayYear
             updateCalendar(currentYear, currentMonth)
+        } else {
+            root.pendingOpen = false
+            root.margins.left = -400
         }
     }
 
-    visible: ready && (isOpen || popAnim.running)
+    visible: ready && (isOpen || root.pendingOpen || popAnim.running)
 
     property QtObject colors: QtObject {
         property color background: "#12131b"
@@ -69,6 +83,8 @@ PanelWindow {
         property color shadow: "#000000"
         property color on_surface: "#e4e1ee"
         property color on_surface_variant: "#c4c6d1"
+        property color error: "#ffb4ab"
+        property color tertiary: "#ffb3b0"
 
         function updateFromJson(jsonString) {
             try {
@@ -84,6 +100,8 @@ PanelWindow {
                 if (c.shadow) shadow = c.shadow
                 if (c.on_surface) on_surface = c.on_surface
                 if (c.on_surface_variant) on_surface_variant = c.on_surface_variant
+                if (c.error) error = c.error
+                if (c.tertiary) tertiary = c.tertiary
                 return true
             } catch (e) {
                 console.log("Failed to parse quickshell colors: " + e)
@@ -100,7 +118,12 @@ PanelWindow {
         property real border_alpha: 0.15
         property int border_width: 1
         property real shadow_alpha: 0.4
-        property int calendar_margin_top: 42
+        property real blur_saturation: 0.0
+        property real gradient_lower_alpha: 0.01
+        property int shadow_blur: 24
+        property int waybar_clearance: 42
+        property int calendar_width: 320
+        property int calendar_height: 380
         property int calendar_margin_left: 12
         property int calendar_radius: 24
         property int calendar_inner_margin: 20
@@ -122,7 +145,12 @@ PanelWindow {
                 if (t.border_alpha !== undefined) border_alpha = t.border_alpha
                 if (t.border_width !== undefined) border_width = t.border_width
                 if (t.shadow_alpha !== undefined) shadow_alpha = t.shadow_alpha
-                if (t.calendar_margin_top !== undefined) calendar_margin_top = t.calendar_margin_top
+                if (t.blur_saturation !== undefined) blur_saturation = t.blur_saturation
+                if (t.gradient_lower_alpha !== undefined) gradient_lower_alpha = t.gradient_lower_alpha
+                if (t.shadow_blur !== undefined) shadow_blur = t.shadow_blur
+                if (t.waybar_clearance !== undefined) waybar_clearance = t.waybar_clearance
+                if (t.calendar_width !== undefined) calendar_width = t.calendar_width
+                if (t.calendar_height !== undefined) calendar_height = t.calendar_height
                 if (t.calendar_margin_left !== undefined) calendar_margin_left = t.calendar_margin_left
                 if (t.calendar_radius !== undefined) calendar_radius = t.calendar_radius
                 if (t.calendar_inner_margin !== undefined) calendar_inner_margin = t.calendar_inner_margin
@@ -302,34 +330,36 @@ PanelWindow {
             layer.effect: MultiEffect {
                 blurEnabled: true
                 blur: root.tokens.blur_strength
-                saturation: 0.0
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                radius: parent.radius
-                gradient: Gradient {
-                    orientation: Gradient.Vertical
-                    GradientStop { position: 0.0; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_top_alpha) }
-                    GradientStop { position: 0.3; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_mid_alpha) }
-                    GradientStop { position: 1.0; color: "transparent" }
-                }
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: 1
-                radius: parent.radius - 1
-                color: "transparent"
-                border.color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.border_alpha)
-                border.width: root.tokens.border_width
+                saturation: root.tokens.blur_saturation
             }
         }
 
-        RectangularShadow {
+        Rectangle {
             anchors.fill: panelBg
             radius: panelBg.radius
-            blur: 24
+            gradient: Gradient {
+                orientation: Gradient.Vertical
+                GradientStop { position: 0.0; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_top_alpha) }
+                GradientStop { position: 0.4; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_mid_alpha) }
+                GradientStop { position: 0.7; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_lower_alpha) }
+                GradientStop { position: 1.0; color: "transparent" }
+            }
+        }
+
+        Rectangle {
+            anchors.fill: panelBg
+            anchors.margins: 1
+            radius: panelBg.radius - 1
+            color: "transparent"
+            border.color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.border_alpha)
+            border.width: root.tokens.border_width
+        }
+
+        RectangularShadow {
+            z: -1
+            anchors.fill: panelBg
+            radius: panelBg.radius
+            blur: root.tokens.shadow_blur
             color: Qt.rgba(root.colors.shadow.r, root.colors.shadow.g, root.colors.shadow.b, root.tokens.shadow_alpha)
         }
 
@@ -370,7 +400,7 @@ PanelWindow {
                     Text {
                         Layout.fillWidth: true
                         text: "Wk"
-                        color: root.colors.on_surface_variant; opacity: 0.5
+                        color: root.colors.on_surface_variant; opacity: 0.7
                         font.pixelSize: root.tokens.font_size_small; font.weight: Font.Bold
                         horizontalAlignment: Text.AlignHCenter
                         Layout.bottomMargin: 3
@@ -418,7 +448,7 @@ PanelWindow {
                             Rectangle {
                                 Layout.fillWidth: true; Layout.fillHeight: true
                                 radius: width / 2
-                                color: model.isToday ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.primary_alpha) : "transparent"
+                                color: model.isToday ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.primary_alpha) : dayHoverArea.containsMouse ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.08) : "transparent"
 
                                 Rectangle {
                                     anchors.centerIn: parent
@@ -457,6 +487,13 @@ PanelWindow {
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     visible: model.isCurrentMonth && !model.isToday && (model.day % 6 === 0)
                                 }
+
+                                MouseArea {
+                                    id: dayHoverArea
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    acceptedButtons: Qt.NoButton
+                                }
                             }
                         }
                     }
@@ -467,8 +504,26 @@ PanelWindow {
 
     IpcHandler {
         target: "calendar"
-        function toggle(): void { root.isOpen = !root.isOpen }
-        function open(): void { root.isOpen = true }
-        function close(): void { root.isOpen = false }
+        function toggle(x: real, y: real): void {
+            if (root.isOpen) {
+                root.isOpen = false
+                root.pendingOpen = false
+            } else {
+                root.margins.left = x - 20
+                root.margins.top = y + 8
+                root.pendingOpen = true
+                root.isOpen = true
+            }
+        }
+        function open(x: real, y: real): void {
+            root.margins.left = x - 20
+            root.margins.top = y + 8
+            root.pendingOpen = true
+            root.isOpen = true
+        }
+        function close(): void {
+            root.isOpen = false
+            root.pendingOpen = false
+        }
     }
 }

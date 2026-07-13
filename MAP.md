@@ -88,7 +88,7 @@ Branding. `shayar-logo.png`, `shayar-logo.svg`, `shayar.svg`. The logo is a geom
 Default wallpapers. `default.png` is the only fallback wallpaper.
 
 ### `bin/`
-14 CLI tools available system-wide after symlinking:
+15 CLI tools available system-wide after symlinking:
 
 - **`shayar-apps`** -- Scans `/usr/share/applications` and `~/.local/share/applications` for `.desktop` files. Handles Flatpak apps. Feeds them to fzf. Icons: `󰀻 ` for system apps, `󰏖 ` for Flatpak.
 - **`shayar-finder`** -- Traverses directories up to 4 levels deep. Returns `TYPE_DIR:` or `TYPE_FILE:` prefixes for shell integration.
@@ -101,6 +101,7 @@ Default wallpapers. `default.png` is the only fallback wallpaper.
 - **`shayar-net-toggle`** — Network panel (Quickshell). Closes other 4 panels.
 - **`shayar-bt-toggle`** — Bluetooth panel (Quickshell). Closes other 4 panels.
 - **`shayar-vol-toggle`** — Volume panel (Quickshell). Closes other 4 panels.
+- **`shayar-panel-pos`** — Calculates approximate Waybar icon positions from CSS values and screen resolution. Used by toggle scripts for icon-relative panel placement.
 - **`shayar-bt-popup`** — Bluetooth popup (legacy).
 - **`shayar-wifi-popup`** — WiFi popup (legacy).
 
@@ -348,34 +349,37 @@ Material Design 3 color definitions for Rofi.
 
 ## Quickshell Applets (`config/quickshell/`)
 
-Replaced wlogout in 2026-07. Native QML panels with glass theme, persistent Quickshell process, toggled via IPC. All applets share `shared/BaseState.qml` (colors, token readers, IPC handler) and `shared/GlassPanel.qml` (panel background, gradient, border, shadow). Color/token pipeline from `quickshell.json`.
+Replaced wlogout in 2026-07. Native QML panels with glass theme, persistent Quickshell process, toggled via IPC. Each applet is self-contained (inline colors/tokens QtObjects). Color/token pipeline from `quickshell-tokens.json`.
+
+### Glass effect (all 5 applets)
+4-stop gradient (0.0 → 0.4 → 0.7 → 1.0), blur via `MultiEffect`, border with primary tint, `RectangularShadow` with `z: -1`. All params tokenized: `panel_bg_alpha`, `blur_strength`, `blur_saturation`, `gradient_top_alpha`, `gradient_mid_alpha`, `gradient_lower_alpha`, `border_alpha`, `shadow_alpha`, `shadow_blur`.
 
 ### Toggle mechanism
-All five popups (power, calendar, net, bt, vol) use mutual exclusion — opening one closes the other four via `qs ipc call <target> close`.
+All five popups (power, calendar, net, bt, vol) use mutual exclusion — opening one closes the other four via `qs ipc call <target> close`. Each toggle script calls `shayar-panel-pos` to calculate icon coordinates, then passes them via IPC so panels appear directly under their Waybar trigger icons.
 
 ### `PowerApp/PowerWindow.qml`
-PanelWindow with 6 buttons (Lock, Suspend, Log Out, Hibernate, Restart, Shut Down), slide-from-right animation, keyboard navigation, gradient + blur glass look. Anchored center-right.
+PanelWindow with 6 buttons (Lock, Suspend, Log Out, Hibernate, Restart, Shut Down), slide-from-right animation, keyboard navigation, gradient + blur glass look. Centers on right edge of screen.
 
 ### `CalendarApp/CalendarWindow.qml`
-PanelWindow with a full month calendar, date picker, and quick navigation. Anchored top-left. Auto-loads current month on open.
+PanelWindow with a full month calendar, date picker, and quick navigation. Anchored top-left, positioned under clock icon on open. Auto-loads current month on open. Day cells have hover state.
 
 ### `NetApp/NetWindow.qml`
-WiFi applet. Scans `nmcli` for nearby networks, shows SSID, signal strength, lock icon if secured, connected state. Actions: connect by BSSID, disconnect, toggle radio on/off, rescan. Auto-refreshes every 3s while open. Anchored top-right.
+WiFi applet. Scans `nmcli` for nearby networks, shows SSID, signal strength, lock icon if secured, connected state. Actions: connect by BSSID, disconnect, toggle radio on/off, rescan. Auto-refreshes every 3s while open. Fully tokenized spacing/sizes.
 
 ### `BtApp/BtWindow.qml`
-Bluetooth applet. Scans `bluetoothctl` for devices, shows name, MAC, paired/connected/trusted state. Actions: power toggle, connect/disconnect, pair+trust+connect, bounded 12s scan. Keyboard navigation (arrows + Enter). Anchored top-right.
+Bluetooth applet. Scans `bluetoothctl` for devices, shows name, MAC, paired/connected/trusted state. Actions: power toggle, connect/disconnect, pair+trust+connect, bounded 12s scan. Keyboard navigation (arrows + Enter). Fully tokenized spacing/sizes.
 
 ### `VolApp/VolWindow.qml`
-Volume applet. Shows sink/source with slider, mute toggle, icon + label. Scroll wheel adjusts in 5% steps. Keyboard navigation (left/right + space). Anchored center-right.
+Volume applet. Shows sink/source with slider, mute toggle, icon + label. Scroll wheel adjusts in 5% steps. Keyboard navigation (left/right + space). Per-app `vol_panel_radius`.
 
 ### Toggle scripts
-| Script | IPC target | Keybind |
-|--------|-----------|---------|
-| `shayar-power-toggle` | `power` | `SUPER+CTRL+L` |
-| `shayar-calendar-toggle` | `calendar` | (waybar clock click) |
-| `shayar-net-toggle` | `net` | `SUPER+CTRL+N` |
-| `shayar-bt-toggle` | `bt` | `SUPER+CTRL+B` |
-| `shayar-vol-toggle` | `vol` | (XF86AudioRaiseVolume waybar scroll) |
+| Script | IPC target | Position |
+|--------|-----------|----------|
+| `shayar-power-toggle` | `power` | Centered on right edge |
+| `shayar-calendar-toggle` | `calendar` | Under clock icon |
+| `shayar-net-toggle` | `net` | Under network icon |
+| `shayar-bt-toggle` | `bt` | Under bluetooth icon |
+| `shayar-vol-toggle` | `vol` | Under volume icon |
 
 ### Color pipeline
 `matugen` → `~/.config/shayar/colors/quickshell.json` → read by `Process` in QML at startup. Reloaded via `qs ipc call theme-manager reload` on wallpaper change.

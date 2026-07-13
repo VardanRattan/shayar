@@ -21,8 +21,9 @@ ensure_qs() {
 }
 ensure_qs
 
+POS=$("${HOME}/.config/shayar/bin/shayar-panel-pos" bt)
 qs -p "$QS_SHELL" ipc call power close
 qs -p "$QS_SHELL" ipc call calendar close
 qs -p "$QS_SHELL" ipc call net close
 qs -p "$QS_SHELL" ipc call vol close
-qs -p "$QS_SHELL" ipc call bt toggle
+qs -p "$QS_SHELL" ipc call bt toggle $POS

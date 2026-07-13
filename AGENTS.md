@@ -3,7 +3,7 @@
 ## Architecture
 
 - **Single theme**: glass
-- **Single visual source**: `config/shayar/themes/design-tokens.json` (252 tokens across 9 sections)
+- **Single visual source**: `config/shayar/themes/design-tokens.json` (~290 tokens across 9 sections)
 - **Single settings file**: `config/shayar/settings/shayar.conf` (23 lines, `KEY="value"`)
 - **8 generated token files**: CSS, Lua, Rasi, Env, Hyprlock, Kitty, GTK + `shayar.json` — run `shayar-design-tokens generate` after any change to `design-tokens.json`
 - **Color pipeline**: `shayar.json` → matugen → per-component `colors.*` files → all CSS/Lua/Rasi configs
@@ -48,7 +48,7 @@ Available extensions in `config/shayar/extensions/available/`:
 | `config/shayar/` | Core engine: settings, themes, scripts, bin, listeners |
 | `config/shayar/settings/shayar.conf` | All user-facing settings |
 | `config/shayar/scripts/` | 13 shayar scripts (shayar-wallpaper, shayar-design-tokens, etc.) |
-| `config/shayar/bin/` | 14 CLI tools available system-wide |
+| `config/shayar/bin/` | 15 CLI tools available system-wide |
 | `config/shayar/themes/design-tokens.json` | **Single source of truth** for all visual values |
 | `config/shayar/themes/glass/theme.sh` | Theme activator |
 | `config/matugen/` | Color generation pipeline (config.toml + templates) |
@@ -83,7 +83,7 @@ Available extensions in `config/shayar/extensions/available/`:
 - **opacity** (26): active/inactive, per-component opacities
 - **animation** (29): 14 bezier curves, 10 speed values, 6 transitions
 - **shadow** (5): waybar + swaync CSS shadow strings
-- **quickshell** (5): QS-specific tokens
+- **quickshell** (58): QS-specific tokens — panel sizes, glass effect params, spacing, per-app radii, alphas
 - **kitty** (9): font, size, window dims, padding, scrollback, cursor blink
 - **gtk** (6): GTK theme names
 
@@ -118,6 +118,7 @@ validate → cache → wait for awww → `awww img` → matugen → reload wayba
 - `shayar-net-toggle` — Network panel (Quickshell)
 - `shayar-calendar-toggle` — Calendar panel (Quickshell)
 - `shayar-power-toggle` — Power menu (Quickshell)
+- `shayar-panel-pos` — Calculates icon positions from Waybar CSS for panel placement
 
 ## Performance notes
 

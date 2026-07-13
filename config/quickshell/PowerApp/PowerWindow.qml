@@ -23,6 +23,7 @@ PanelWindow {
     implicitHeight: column.implicitHeight + (root.ready ? root.tokens.button_height : 56)
     color: "transparent"
     anchors.right: true
+    anchors.top: true
 
     HyprlandFocusGrab {
         windows: [root]
@@ -36,6 +37,7 @@ PanelWindow {
     }
 
     property bool isOpen: false
+    property bool pendingOpen: false
     property bool ready: false
     property bool colorsLoaded: false
     property bool tokensLoaded: false
@@ -64,19 +66,19 @@ PanelWindow {
         }
     }
 
-    visible: ready && (isOpen || root.slideOffset !== -120)
+    visible: ready && (isOpen || root.pendingOpen)
 
-    property int slideOffset: isOpen ? 0 : -120
-
-    Behavior on slideOffset {
-        NumberAnimation {
-            id: slideAnim
-            duration: 350
-            easing.type: Easing.OutQuint
-        }
+    margins {
+        left: root.ready ? (Screen.width - 180) / 2 : 870
+        top: root.ready ? root.tokens.waybar_clearance : 42
     }
 
-    margins { right: root.slideOffset }
+    Behavior on margins.left {
+        NumberAnimation { duration: 350; easing.type: Easing.OutQuint }
+    }
+    Behavior on margins.top {
+        NumberAnimation { duration: 350; easing.type: Easing.OutQuint }
+    }
 
     property QtObject colors: QtObject {
         property color background: "#12131b"
@@ -89,6 +91,8 @@ PanelWindow {
         property color surface_bright: "#393842"
         property color shadow: "#000000"
         property color on_surface_variant: "#c4c6d1"
+        property color error: "#ffb4ab"
+        property color tertiary: "#ffb3b0"
 
         function updateFromJson(jsonString) {
             try {
@@ -104,6 +108,8 @@ PanelWindow {
                 if (c.surface_bright) surface_bright = c.surface_bright
                 if (c.shadow) shadow = c.shadow
                 if (c.on_surface_variant) on_surface_variant = c.on_surface_variant
+                if (c.error) error = c.error
+                if (c.tertiary) tertiary = c.tertiary
                 return true
             } catch (e) {
                 console.log("Failed to parse quickshell colors: " + e)
@@ -122,6 +128,9 @@ PanelWindow {
         property real border_alpha: 0.15
         property int border_width: 1
         property real shadow_alpha: 0.4
+        property real blur_saturation: 0.0
+        property real gradient_lower_alpha: 0.01
+        property int shadow_blur: 24
         property int button_spacing: 12
         property int button_width: 130
         property int button_height: 56
@@ -133,6 +142,7 @@ PanelWindow {
         property real primary_alpha: 0.9
         property real hover_border_alpha: 0.5
         property int font_size_label: 13
+        property int waybar_clearance: 42
 
         function updateFromJson(jsonString) {
             try {
@@ -147,6 +157,9 @@ PanelWindow {
                 if (t.border_alpha !== undefined) border_alpha = t.border_alpha
                 if (t.border_width !== undefined) border_width = t.border_width
                 if (t.shadow_alpha !== undefined) shadow_alpha = t.shadow_alpha
+                if (t.blur_saturation !== undefined) blur_saturation = t.blur_saturation
+                if (t.gradient_lower_alpha !== undefined) gradient_lower_alpha = t.gradient_lower_alpha
+                if (t.shadow_blur !== undefined) shadow_blur = t.shadow_blur
                 if (t.button_spacing !== undefined) button_spacing = t.button_spacing
                 if (t.button_width !== undefined) button_width = t.button_width
                 if (t.button_height !== undefined) button_height = t.button_height
@@ -158,6 +171,7 @@ PanelWindow {
                 if (t.primary_alpha !== undefined) primary_alpha = t.primary_alpha
                 if (t.hover_border_alpha !== undefined) hover_border_alpha = t.hover_border_alpha
                 if (t.font_size_label !== undefined) font_size_label = t.font_size_label
+                if (t.waybar_clearance !== undefined) waybar_clearance = t.waybar_clearance
                 return true
             } catch (e) {
                 console.log("Failed to parse quickshell tokens: " + e)
@@ -210,34 +224,36 @@ PanelWindow {
             layer.effect: MultiEffect {
                 blurEnabled: true
                 blur: root.tokens.blur_strength
-                saturation: 0.0
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                radius: parent.radius
-                gradient: Gradient {
-                    orientation: Gradient.Vertical
-                    GradientStop { position: 0.0; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_top_alpha) }
-                    GradientStop { position: 0.3; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_mid_alpha) }
-                    GradientStop { position: 1.0; color: "transparent" }
-                }
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                anchors.margins: 1
-                radius: parent.radius - 1
-                color: "transparent"
-                border.color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.border_alpha)
-                border.width: root.tokens.border_width
+                saturation: root.tokens.blur_saturation
             }
         }
 
-        RectangularShadow {
+        Rectangle {
             anchors.fill: panelBg
             radius: panelBg.radius
-            blur: 24
+            gradient: Gradient {
+                orientation: Gradient.Vertical
+                GradientStop { position: 0.0; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_top_alpha) }
+                GradientStop { position: 0.4; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_mid_alpha) }
+                GradientStop { position: 0.7; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_lower_alpha) }
+                GradientStop { position: 1.0; color: "transparent" }
+            }
+        }
+
+        Rectangle {
+            anchors.fill: panelBg
+            anchors.margins: 1
+            radius: panelBg.radius - 1
+            color: "transparent"
+            border.color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.border_alpha)
+            border.width: root.tokens.border_width
+        }
+
+        RectangularShadow {
+            z: -1
+            anchors.fill: panelBg
+            radius: panelBg.radius
+            blur: root.tokens.shadow_blur
             color: Qt.rgba(root.colors.shadow.r, root.colors.shadow.g, root.colors.shadow.b, root.tokens.shadow_alpha)
         }
 
@@ -454,8 +470,26 @@ PanelWindow {
 
     IpcHandler {
         target: "power"
-        function toggle(): void { root.isOpen = !root.isOpen }
-        function open(): void { root.isOpen = true }
-        function close(): void { root.isOpen = false }
+        function toggle(x: real, y: real): void {
+            if (root.isOpen) {
+                root.isOpen = false
+                root.pendingOpen = false
+            } else {
+                root.margins.left = (Screen.width - 180) / 2
+                root.margins.top = y
+                root.pendingOpen = true
+                root.isOpen = true
+            }
+        }
+        function open(x: real, y: real): void {
+            root.margins.left = (Screen.width - 180) / 2
+            root.margins.top = y
+            root.pendingOpen = true
+            root.isOpen = true
+        }
+        function close(): void {
+            root.isOpen = false
+            root.pendingOpen = false
+        }
     }
 }

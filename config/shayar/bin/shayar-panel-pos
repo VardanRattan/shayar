@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# Calculates approximate icon positions from Waybar geometry.
+# Waybar is layer-shell (not in hyprctl clients), so we calculate from config.
+# Usage: shayar-panel-pos <module>
+#   Modules: power, calendar, vol, bt, net
+# Outputs: x y (space-separated, center of icon)
+set -euo pipefail
+
+MODULE="${1:-}"
+
+SCREEN_W=$(hyprctl monitors -j | jq '.[0].width')
+
+# Waybar config values (from design-tokens.json)
+MARGIN_TOP=8
+MARGIN_LEFT=24
+MARGIN_RIGHT=24
+PILL_MARGIN_X=6
+PILL_PADDING_X=20
+ICON_FONT_SIZE=18
+ICON_PADDING=10
+BAR_H=42
+
+# Right pill: anchored to screen right
+# Pill right edge = screen_w - margin_right - pill_margin_x
+PILL_RIGHT=$((SCREEN_W - MARGIN_RIGHT - PILL_MARGIN_X))
+MODULE_W=$((ICON_FONT_SIZE + ICON_PADDING * 2))  # 38px per module
+
+# Module centers (left-to-right in right pill)
+# Each module occupies MODULE_W px; center is at half width
+POS_VOL=$((PILL_RIGHT - PILL_PADDING_X - MODULE_W / 2))
+POS_BT=$((PILL_RIGHT - PILL_PADDING_X - MODULE_W - MODULE_W / 2))
+POS_NET=$((PILL_RIGHT - PILL_PADDING_X - MODULE_W * 2 - MODULE_W / 2))
+POS_POWER=$((PILL_RIGHT - PILL_PADDING_X - MODULE_W * 5 - MODULE_W / 2))
+
+# Calendar: left side, under clock (~120px from left edge of bar)
+POS_CAL_X=$((MARGIN_LEFT + 120))
+
+case "$MODULE" in
+    power)    echo "$POS_POWER $BAR_H" ;;
+    calendar) echo "$POS_CAL_X $BAR_H" ;;
+    vol)      echo "$POS_VOL $BAR_H" ;;
+    bt)       echo "$POS_BT $BAR_H" ;;
+    net)      echo "$POS_NET $BAR_H" ;;
+    *)        echo "0 0" ;;
+esac

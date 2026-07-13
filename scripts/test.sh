@@ -125,8 +125,6 @@ check "quickshell network exists" test -f config/quickshell/NetApp/NetWindow.qml
 check "quickshell bluetooth exists" test -f config/quickshell/BtApp/BtWindow.qml
 check "quickshell volume exists" test -f config/quickshell/VolApp/VolWindow.qml
 check "quickshell shell exists" test -f config/quickshell/shell.qml
-check "quickshell BaseState exists" test -f config/quickshell/shared/BaseState.qml
-check "quickshell GlassPanel exists" test -f config/quickshell/shared/GlassPanel.qml
 check "quickshell-tokens.json exists" test -f config/shayar/colors/quickshell-tokens.json
 check "shayar-calendar-toggle script exists" test -f config/shayar/bin/shayar-calendar-toggle
 

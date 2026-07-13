@@ -36,6 +36,8 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd(HOME .. "/.config/hypr/scripts/gtk.sh")
 
     -- Idempotent launchers (guard against duplicates on reload)
+    hl.exec_cmd("rm -f " .. HOME .. "/.config/shayar/settings/waybar-disabled")
+    hl.exec_cmd("pgrep -x waybar >/dev/null || " .. HOME .. "/.config/waybar/launch.sh")
     hl.exec_cmd("pgrep -x swaync >/dev/null || swaync")
     hl.exec_cmd("pgrep -x hypridle >/dev/null || hypridle")
     hl.exec_cmd("pgrep -x qs >/dev/null || qs -p " .. HOME .. "/.config/quickshell/shell.qml")

@@ -1,21 +1,30 @@
 # Changelog
 
-## [0.2.2] - 2026-07-12
+## [0.2.3] - 2026-07-13
 
-### Glass effect overhaul
-- 4-stop gradient (smoother fall-off: 0.0 → 0.4 → 0.7 → 1.0)
-- 20 new quickshell tokens (38 → 58): `shadow_blur`, `blur_saturation`, `gradient_lower_alpha`, per-app radii (`net_panel_radius`, `bt_panel_radius`, `vol_panel_radius`), list spacing (`list_inner_margin`, `list_row_margin`, `list_row_spacing`, `list_column_spacing`, `header_spacing`), `toggle_button_size`, `list_icon_size`, alphas (`separator_alpha`, `row_hover_alpha`, `row_selected_alpha`, `row_connected_alpha`, `row_border_alpha`, `icon_circle_alpha`, `badge_alpha`, `badge_paired_alpha`, `badge_border_alpha`)
-- Border alpha 0.15 → 0.2 for better visibility
-- Calendar "Wk" text opacity 0.5 → 0.7 (readability fix)
-- Calendar day cells gain hover state (primary @ 0.08)
+### Solid backgrounds
+- Converted all 5 Quickshell applets from glass (blur + gradient) to solid background
+- Removed `MultiEffect` blur layer and 4-stop gradient overlay from Power, Calendar, Net, BT, Vol
+- `panel_bg_alpha` 0.7 → 0.95 (near-opaque solid)
+- Border and shadow retained
+- Shadow now fades out on panel close (200ms animation) instead of lingering
+- Power menu pill background and border also fade on close
 
-### Icon-relative panel positioning
-- New `shayar-panel-pos` helper calculates icon centers from Waybar CSS + screen resolution
-- All 5 toggle scripts pass icon coordinates via IPC args
-- Panels appear directly under their Waybar trigger icons
-- Power menu centers on right edge of screen
+### SDDM sync
+- New `shayar-sddm-sync` script — syncs wallpaper and matugen colors to SDDM login screen
+- `--install` flag installs the Shayar SDDM theme
+- Generates `theme.conf.user` with full MD3 palette from `shayar.json`
+
+### Welcome screen
+- New `WelcomeApp/WelcomeWindow.qml` — first-boot welcome screen with keybindings + quick launch
+- Solid background, centered on screen, matugen colors
+- Centered Shayar logo (80x80) at top
+- Auto-shows on first boot (flag file `~/.config/shayar/.welcomed`)
+- Reopen anytime via `shayar-welcome` command or `SUPER+CTRL+H`
+- IPC target: `welcome`
+- 2 new tokens: `welcome_panel_width` (420), `welcome_panel_radius` (24)
 
 ### Docs
 - CHANGELOG stripped to current version only
-- MAP.md: removed stale BaseState/GlassPanel references, documented `shayar-panel-pos`
-- AGENTS.md: updated token counts and toggle script section
+- MAP.md updated: glass → solid, new applets (welcome), new scripts (sddm-sync, welcome-toggle)
+- AGENTS.md updated: token counts, bin/ list, toggle scripts, keybinds

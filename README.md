@@ -11,9 +11,9 @@ Built on the modular foundation of [ML4W Dotfiles](https://github.com/mylinuxfor
 ## What you get
 
 - **Wallpaper-driven theming** — one wallpaper change recolors terminal, bar, launcher, lock screen, notifications, and applets
-- **Single source of truth** — `design-tokens.json` (252 tokens) drives every visual value
-- **Glass UI** — frosted panels with blur, gradient borders, and depth-aware shadows
-- **Quickshell applets** — native QML power menu, calendar, WiFi, Bluetooth, and volume panels
+- **Single source of truth** — `design-tokens.json` (292 tokens) drives every visual value
+- **Solid applet UI** — clean, opaque panels with matugen colors, borders, and shadows
+- **Quickshell applets** — native QML power menu, calendar, WiFi, Bluetooth, volume, and welcome panels
 - **Zero `~/.config` pollution** — everything symlinks from this repo
 
 ---
@@ -77,7 +77,7 @@ wallpaper
 | `rofi/` | App launcher — 5 config modes |
 | `swaync/` | Notification center — glass theme, DND toggle |
 | `kitty/` | Terminal — matugen colors, truecolor |
-| `quickshell/` | Applets — power, calendar, WiFi, BT, volume (QML) |
+| `quickshell/` | Applets — power, calendar, WiFi, BT, volume, welcome (QML) |
 | `shayar/` | Core — scripts, bin tools, design tokens, settings |
 | `bashrc/`, `zshrc/` | Shell configs — shared aliases |
 
@@ -97,6 +97,7 @@ wallpaper
 | `SUPER+1-0` | Workspace | `SUPER+CTRL+N` | Network applet |
 | `SUPER+SHIFT+1-0` | Move to workspace | `SUPER+CTRL+B` | Bluetooth applet |
 | `SUPER+S` | Special workspace | `SUPER+SHIFT+B` | Toggle statusbar |
+| `SUPER+CTRL+H` | Welcome screen | | |
 
 Full list: [default.lua](config/hypr/conf/keybindings/default.lua)
 

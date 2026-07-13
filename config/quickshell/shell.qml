@@ -10,6 +10,7 @@ ShellRoot {
     Loader { id: loaderNet; source: "NetApp/NetWindow.qml" }
     Loader { id: loaderBt; source: "BtApp/BtWindow.qml" }
     Loader { id: loaderVol; source: "VolApp/VolWindow.qml" }
+    Loader { id: loaderWelcome; source: "WelcomeApp/WelcomeWindow.qml" }
 
     IpcHandler {
         target: "theme-manager"
@@ -19,6 +20,7 @@ ShellRoot {
             if (loaderNet.item) loaderNet.item.reload()
             if (loaderBt.item) loaderBt.item.reload()
             if (loaderVol.item) loaderVol.item.reload()
+            if (loaderWelcome.item) loaderWelcome.item.reload()
         }
     }
 }

@@ -2,8 +2,8 @@
 
 ## Architecture
 
-- **Single theme**: glass
-- **Single visual source**: `config/shayar/themes/design-tokens.json` (~290 tokens across 9 sections)
+- **Single theme**: glass (waybar/swaync/rofi); QS applets use solid backgrounds
+- **Single visual source**: `config/shayar/themes/design-tokens.json` (~292 tokens across 9 sections)
 - **Single settings file**: `config/shayar/settings/shayar.conf` (23 lines, `KEY="value"`)
 - **8 generated token files**: CSS, Lua, Rasi, Env, Hyprlock, Kitty, GTK + `shayar.json` — run `shayar-design-tokens generate` after any change to `design-tokens.json`
 - **Color pipeline**: `shayar.json` → matugen → per-component `colors.*` files → all CSS/Lua/Rasi configs
@@ -20,7 +20,7 @@
 5. **Hyprland scripts** (under `config/hypr/scripts/`) are for WM-integrated tools (keybinds, power, volume).
 6. **Waybar modules** are defined inline in the theme `config` and toggled by `launch.sh`.
 7. **Matugen templates** live in `config/matugen/templates/`. Each maps to a `[templates.*]` section in `config.toml`.
-8. **QML IPC targets** (`power`, `bt`, `net`, `calendar`, `vol`) are the contract between shell toggle scripts and Quickshell applets. If a target is renamed in QML `IpcHandler.target`, all corresponding `shayar-*-toggle` scripts must be updated.
+8. **QML IPC targets** (`power`, `bt`, `net`, `calendar`, `vol`, `welcome`) are the contract between shell toggle scripts and Quickshell applets. If a target is renamed in QML `IpcHandler.target`, all corresponding `shayar-*-toggle` scripts must be updated.
 
 ## Extensions
 
@@ -42,13 +42,13 @@ Available extensions in `config/shayar/extensions/available/`:
 | `config/hypr/conf/autostart.lua` | Startup sequence |
 | `config/waybar/` | Status bar (`launch.sh`, `themes/`) |
 | `config/swaync/` | Notification center |
-| `config/quickshell/` | Quickshell applets: power menu, calendar, WiFi, Bluetooth, Volume (`PowerApp/`, `CalendarApp/`, `NetApp/`, `BtApp/`, `VolApp/`, `shared/`, `icons/`) |
+| `config/quickshell/` | Quickshell applets: power menu, calendar, WiFi, Bluetooth, Volume, Welcome (`PowerApp/`, `CalendarApp/`, `NetApp/`, `BtApp/`, `VolApp/`, `WelcomeApp/`, `icons/`) |
 | `config/rofi/` | App launcher (5 rasi config files) |
 | `config/kitty/` | Terminal emulator |
 | `config/shayar/` | Core engine: settings, themes, scripts, bin, listeners |
 | `config/shayar/settings/shayar.conf` | All user-facing settings |
 | `config/shayar/scripts/` | 13 shayar scripts (shayar-wallpaper, shayar-design-tokens, etc.) |
-| `config/shayar/bin/` | 15 CLI tools available system-wide |
+| `config/shayar/bin/` | 18 CLI tools available system-wide |
 | `config/shayar/themes/design-tokens.json` | **Single source of truth** for all visual values |
 | `config/shayar/themes/glass/theme.sh` | Theme activator |
 | `config/matugen/` | Color generation pipeline (config.toml + templates) |
@@ -72,8 +72,10 @@ Available extensions in `config/shayar/extensions/available/`:
 | Modify network | `quickshell/NetApp/NetWindow.qml` | Restart QS: `pkill qs; qs -p ~/.config/quickshell/shell.qml` |
 | Modify bluetooth | `quickshell/BtApp/BtWindow.qml` | Restart QS: `pkill qs; qs -p ~/.config/quickshell/shell.qml` |
 | Modify volume | `quickshell/VolApp/VolWindow.qml` | Restart QS: `pkill qs; qs -p ~/.config/quickshell/shell.qml` |
+| Modify welcome | `quickshell/WelcomeApp/WelcomeWindow.qml` | Restart QS: `pkill qs; qs -p ~/.config/quickshell/shell.qml` |
 | Regenerate QS colors | — | Run `shayar-design-tokens generate --with-colors` or change wallpaper |
 | Regenerate colors from wallpaper | — | Run `shayar-wallpaper <path>` or `matugen image <path>` |
+| Sync SDDM login screen | — | Run `shayar-sddm-sync` (after wallpaper change) |
 
 ## Design tokens structure (`design-tokens.json`)
 
@@ -83,13 +85,19 @@ Available extensions in `config/shayar/extensions/available/`:
 - **opacity** (26): active/inactive, per-component opacities
 - **animation** (29): 14 bezier curves, 10 speed values, 6 transitions
 - **shadow** (5): waybar + swaync CSS shadow strings
-- **quickshell** (58): QS-specific tokens — panel sizes, glass effect params, spacing, per-app radii, alphas
+- **quickshell** (60): QS-specific tokens — panel sizes, spacing, per-app radii, alphas
 - **kitty** (9): font, size, window dims, padding, scrollback, cursor blink
 - **gtk** (6): GTK theme names
 
 Generated output files write token values in the target format's native syntax (CSS `@define-color`, Lua `dt.*`, env `DT_*`, rasi `$dt-*`, etc.).
 
 ## Key scripts
+
+### SDDM Sync (`shayar-sddm-sync`)
+Syncs current wallpaper and matugen colors to the SDDM login screen. Run after every wallpaper change if SDDM is installed.
+- `--install` — Install the SDDM theme (first time)
+- `--status` — Show sync status
+- Requires SDDM + root access for theme dir operations
 
 ### Startup (`autostart.lua`)
 1. dbus-update-activation-environment
@@ -118,6 +126,7 @@ validate → cache → wait for awww → `awww img` → matugen → reload wayba
 - `shayar-net-toggle` — Network panel (Quickshell)
 - `shayar-calendar-toggle` — Calendar panel (Quickshell)
 - `shayar-power-toggle` — Power menu (Quickshell)
+- `shayar-welcome-toggle` — Welcome screen (Quickshell)
 - `shayar-panel-pos` — Calculates icon positions from Waybar CSS for panel placement
 
 ## Performance notes
@@ -137,6 +146,7 @@ validate → cache → wait for awww → `awww img` → matugen → reload wayba
 - `fzf` + `jq` — launchers and data processing
 - `swayosd-server` — on-screen display (volume/brightness)
 - `quickshell` — Qt6 shell for power menu and calendar
+- `sddm` — Display manager (optional, for login screen theming)
 
 ## Evolution plan
 

@@ -1,6 +1,7 @@
 .local/
 config/shayar/extensions/enabled/
 config/shayar/extensions/user/
+config/shayar/.welcomed
 overrides/
 config/gtk-3.0/colors.css
 config/gtk-4.0/colors.css

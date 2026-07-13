@@ -268,7 +268,7 @@
     "net_panel_radius": 24,
     "bt_panel_radius": 24,
     "vol_panel_radius": 12,
-    "panel_bg_alpha": 0.7,
+    "panel_bg_alpha": 0.95,
     "blur_strength": 0.7,
     "blur_saturation": 0.0,
     "gradient_top_alpha": 0.12,
@@ -318,6 +318,8 @@
     "track_alpha": 0.1,
     "thumb_size": 14,
     "bar_radius": 6,
-    "bar_min_height": 6
+    "bar_min_height": 6,
+    "welcome_panel_width": 420,
+    "welcome_panel_radius": 24
   }
 }

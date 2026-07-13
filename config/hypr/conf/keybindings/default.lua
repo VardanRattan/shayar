@@ -38,6 +38,7 @@ hl.bind(mainMod .. " + V", hl.dsp.exec_cmd(HOME .. "/.config/shayar/scripts/shay
 
 
 hl.bind(mainMod .. " + CTRL + L", hl.dsp.exec_cmd(HOME .. "/.config/shayar/bin/shayar-power-toggle"), { description = "Open power menu" })
+hl.bind(mainMod .. " + CTRL + H", hl.dsp.exec_cmd(HOME .. "/.config/shayar/bin/shayar-welcome-toggle"), { description = "Open welcome screen" })
 hl.bind(mainMod .. " + CTRL + N", hl.dsp.exec_cmd(HOME .. "/.config/shayar/bin/shayar-net-toggle"),  { description = "Network applet" })
 hl.bind(mainMod .. " + CTRL + B", hl.dsp.exec_cmd(HOME .. "/.config/shayar/bin/shayar-bt-toggle"),   { description = "Bluetooth applet" })
 hl.bind(mainMod .. " + SHIFT + L", hl.dsp.exec_cmd(HOME .. "/.config/shayar/scripts/shayar-power -l"), { description = "Lock Screen directly" })

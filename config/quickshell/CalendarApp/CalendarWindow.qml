@@ -325,25 +325,6 @@ PanelWindow {
             anchors.fill: parent
             radius: root.tokens.calendar_radius
             color: Qt.rgba(root.colors.surface_container.r, root.colors.surface_container.g, root.colors.surface_container.b, root.tokens.panel_bg_alpha)
-
-            layer.enabled: true
-            layer.effect: MultiEffect {
-                blurEnabled: true
-                blur: root.tokens.blur_strength
-                saturation: root.tokens.blur_saturation
-            }
-        }
-
-        Rectangle {
-            anchors.fill: panelBg
-            radius: panelBg.radius
-            gradient: Gradient {
-                orientation: Gradient.Vertical
-                GradientStop { position: 0.0; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_top_alpha) }
-                GradientStop { position: 0.4; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_mid_alpha) }
-                GradientStop { position: 0.7; color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.gradient_lower_alpha) }
-                GradientStop { position: 1.0; color: "transparent" }
-            }
         }
 
         Rectangle {
@@ -361,6 +342,8 @@ PanelWindow {
             radius: panelBg.radius
             blur: root.tokens.shadow_blur
             color: Qt.rgba(root.colors.shadow.r, root.colors.shadow.g, root.colors.shadow.b, root.tokens.shadow_alpha)
+            opacity: root.isOpen ? 1.0 : 0.0
+            Behavior on opacity { NumberAnimation { duration: 200 } }
         }
 
         ColumnLayout {

@@ -88,7 +88,7 @@ Branding. `shayar-logo.png`, `shayar-logo.svg`, `shayar.svg`. The logo is a geom
 Default wallpapers. `default.png` is the only fallback wallpaper.
 
 ### `bin/`
-15 CLI tools available system-wide after symlinking:
+18 CLI tools available system-wide after symlinking:
 
 - **`shayar-apps`** -- Scans `/usr/share/applications` and `~/.local/share/applications` for `.desktop` files. Handles Flatpak apps. Feeds them to fzf. Icons: `󰀻 ` for system apps, `󰏖 ` for Flatpak.
 - **`shayar-finder`** -- Traverses directories up to 4 levels deep. Returns `TYPE_DIR:` or `TYPE_FILE:` prefixes for shell integration.
@@ -102,6 +102,9 @@ Default wallpapers. `default.png` is the only fallback wallpaper.
 - **`shayar-bt-toggle`** — Bluetooth panel (Quickshell). Closes other 4 panels.
 - **`shayar-vol-toggle`** — Volume panel (Quickshell). Closes other 4 panels.
 - **`shayar-panel-pos`** — Calculates approximate Waybar icon positions from CSS values and screen resolution. Used by toggle scripts for icon-relative panel placement.
+- **`shayar-sddm-sync`** — Syncs current wallpaper and matugen colors to SDDM login screen. Requires `--install` first, then run after wallpaper changes. Requires sudo.
+- **`shayar-welcome-toggle`** — Welcome screen (Quickshell). Closes other 5 panels.
+- **`shayar-welcome`** — Opens the welcome screen (Quickshell).
 - **`shayar-bt-popup`** — Bluetooth popup (legacy).
 - **`shayar-wifi-popup`** — WiFi popup (legacy).
 
@@ -238,6 +241,7 @@ Main modifier: SUPER.
 | `SUPER+arrows` | Move focus |
 | `SUPER+PRINT` | Screenshot |
 | `SUPER+CTRL+L` | Power menu |
+| `SUPER+CTRL+H` | Welcome screen |
 | `SUPER+CTRL+N` | Network applet |
 | `SUPER+CTRL+B` | Bluetooth applet |
 | `SUPER+CTRL+W` | Wallpaper picker |
@@ -349,16 +353,16 @@ Material Design 3 color definitions for Rofi.
 
 ## Quickshell Applets (`config/quickshell/`)
 
-Replaced wlogout in 2026-07. Native QML panels with glass theme, persistent Quickshell process, toggled via IPC. Each applet is self-contained (inline colors/tokens QtObjects). Color/token pipeline from `quickshell-tokens.json`.
+Replaced wlogout in 2026-07. Native QML panels with solid background, persistent Quickshell process, toggled via IPC. Each applet is self-contained (inline colors/tokens QtObjects). Color/token pipeline from `quickshell-tokens.json`.
 
-### Glass effect (all 5 applets)
-4-stop gradient (0.0 → 0.4 → 0.7 → 1.0), blur via `MultiEffect`, border with primary tint, `RectangularShadow` with `z: -1`. All params tokenized: `panel_bg_alpha`, `blur_strength`, `blur_saturation`, `gradient_top_alpha`, `gradient_mid_alpha`, `gradient_lower_alpha`, `border_alpha`, `shadow_alpha`, `shadow_blur`.
+### Panel style (all applets)
+Solid `surface_container` background at 0.95 alpha, primary-tinted border, `RectangularShadow` with `z: -1`. No blur, no gradient. Tokens: `panel_bg_alpha`, `border_alpha`, `shadow_alpha`, `shadow_blur`.
 
 ### Toggle mechanism
-All five popups (power, calendar, net, bt, vol) use mutual exclusion — opening one closes the other four via `qs ipc call <target> close`. Each toggle script calls `shayar-panel-pos` to calculate icon coordinates, then passes them via IPC so panels appear directly under their Waybar trigger icons.
+All popups (power, calendar, net, bt, vol, welcome) use mutual exclusion — opening one closes the others via `qs ipc call <target> close`. Each toggle script calls `shayar-panel-pos` to calculate icon coordinates, then passes them via IPC so panels appear directly under their Waybar trigger icons. Power and Welcome center on screen.
 
 ### `PowerApp/PowerWindow.qml`
-PanelWindow with 6 buttons (Lock, Suspend, Log Out, Hibernate, Restart, Shut Down), slide-from-right animation, keyboard navigation, gradient + blur glass look. Centers on right edge of screen.
+PanelWindow with 6 buttons (Lock, Suspend, Log Out, Hibernate, Restart, Shut Down), slide-from-right animation, keyboard navigation. Centers on right edge of screen.
 
 ### `CalendarApp/CalendarWindow.qml`
 PanelWindow with a full month calendar, date picker, and quick navigation. Anchored top-left, positioned under clock icon on open. Auto-loads current month on open. Day cells have hover state.
@@ -372,6 +376,9 @@ Bluetooth applet. Scans `bluetoothctl` for devices, shows name, MAC, paired/conn
 ### `VolApp/VolWindow.qml`
 Volume applet. Shows sink/source with slider, mute toggle, icon + label. Scroll wheel adjusts in 5% steps. Keyboard navigation (left/right + space). Per-app `vol_panel_radius`.
 
+### `WelcomeApp/WelcomeWindow.qml`
+First-boot welcome screen. Solid background, centered on screen. Displays keybindings list + quick launch buttons (Terminal, Browser, Launcher). Auto-shows on first boot via `.welcomed` flag file. IPC target: `welcome`.
+
 ### Toggle scripts
 | Script | IPC target | Position |
 |--------|-----------|----------|
@@ -380,6 +387,8 @@ Volume applet. Shows sink/source with slider, mute toggle, icon + label. Scroll 
 | `shayar-net-toggle` | `net` | Under network icon |
 | `shayar-bt-toggle` | `bt` | Under bluetooth icon |
 | `shayar-vol-toggle` | `vol` | Under volume icon |
+| `shayar-welcome-toggle` | `welcome` | Centered on screen |
+| `shayar-welcome` | `welcome` (open) | Centered on screen |
 
 ### Color pipeline
 `matugen` → `~/.config/shayar/colors/quickshell.json` → read by `Process` in QML at startup. Reloaded via `qs ipc call theme-manager reload` on wallpaper change.

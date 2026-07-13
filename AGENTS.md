@@ -2,10 +2,10 @@
 
 ## Architecture
 
-- **Single theme**: glass (waybar/swaync/rofi); QS applets use solid backgrounds
-- **Single visual source**: `config/shayar/themes/design-tokens.json` (~292 tokens across 9 sections)
+- **Single theme**: solid backgrounds (waybar/swaync/rofi/QS applets)
+- **Single visual source**: `config/shayar/themes/design-tokens.json` (~304 tokens across 9 sections)
 - **Single settings file**: `config/shayar/settings/shayar.conf` (23 lines, `KEY="value"`)
-- **8 generated token files**: CSS, Lua, Rasi, Env, Hyprlock, Kitty, GTK + `shayar.json` — run `shayar-design-tokens generate` after any change to `design-tokens.json`
+- **9 generated token files**: CSS, Lua, Rasi, Env, Hyprlock, Kitty, GTK, `shayar.json`, `fastfetch.jsonc` — run `shayar-design-tokens generate` after any change to `design-tokens.json`
 - **Color pipeline**: `shayar.json` → matugen → per-component `colors.*` files → all CSS/Lua/Rasi configs
 - **Startup order**: `autostart.lua` fires `shayar-autostart` and `gtk.sh` concurrently via `hl.exec_cmd()` (non-blocking). `shayar-autostart` backgrounds `shayar-wallpaper` which runs matugen synchronously, then launches and reloads Waybar. This prevents stale colors on boot.
 - **Theme switching**: `themes/<name>/theme.sh` writes runtime values; `shayar-apply-theme` reads `themed.lst` manifest
@@ -105,13 +105,12 @@ Syncs current wallpaper and matugen colors to the SDDM login screen. Run after e
 3. awww-daemon (wallpaper daemon)
 4. Set cursor theme
 5. Start listeners (low-bat-notification)
-6. Start swayosd-server
-7. polkit agent
-8. shayar-autostart (wallpaper + nm-applet + waybar)
-9. GTK settings
-10. swaync
-11. hypridle
-12. cliphist watcher
+6. polkit agent
+7. shayar-autostart (wallpaper + nm-applet + waybar)
+8. GTK settings
+9. swaync
+10. hypridle
+11. cliphist watcher
 
 ### Wallpaper pipeline (`shayar-wallpaper`)
 validate → cache → wait for awww → `awww img` → matugen → reload waybar/swaync/quickshell → generate blurred wallpaper
@@ -144,7 +143,6 @@ validate → cache → wait for awww → `awww img` → matugen → reload wayba
 - `gum` — pretty CLI output (optional, used in update scripts)
 - `grim` + `slurp` + `wl-copy` — screenshots
 - `fzf` + `jq` — launchers and data processing
-- `swayosd-server` — on-screen display (volume/brightness)
 - `quickshell` — Qt6 shell for power menu and calendar
 - `sddm` — Display manager (optional, for login screen theming)
 

@@ -158,6 +158,26 @@ generate_rofi_font() {
     echo "Generated: $out"
 }
 
+generate_fastfetch() {
+    local src="${XDG_CONFIG_HOME:-$HOME/.config}/fastfetch/config.jsonc"
+    local dst="$OUT_DIR/fastfetch.jsonc"
+    if [ ! -f "$src" ]; then
+        echo ":: fastfetch config not found at $src, skipping"
+        return 0
+    fi
+    cp "$src" "$dst"
+    local sed_script
+    sed_script=$(mktemp)
+    jq -r '
+        paths(scalars) as $p |
+        ($p | map(tostring | ascii_upcase) | join("_")) as $path |
+        "s|@DT_\($path)@|\(getpath($p))|g"
+    ' "$TOKENS_FILE" > "$sed_script"
+    sed -i -f "$sed_script" "$dst"
+    rm -f "$sed_script"
+    echo "Generated: $dst"
+}
+
 generate_waybar_css() {
     local src="${XDG_CONFIG_HOME:-$HOME/.config}/shayar/themes/waybar-style.css"
     local dst="$OUT_DIR/waybar-style.css"
@@ -250,7 +270,7 @@ verify() {
 doctor() {
     local rc=0
     echo "== Shayar doctor =="
-    for d in matugen awww-daemon swayosd-server wl-paste cliphist fzf jq gum; do
+    for d in matugen awww-daemon wl-paste cliphist fzf jq gum; do
         if command -v "$d" >/dev/null 2>&1; then
             echo "  [ok]      $d"
         else
@@ -296,6 +316,7 @@ case "${1:-}" in
         generate_shayar_json
         generate_quickshell_tokens
         generate_rofi_font
+        generate_fastfetch
         generate_waybar_css
         # Sync to hypr/ for require("design-tokens")
         cp "$OUT_DIR/design-tokens.lua" "${XDG_CONFIG_HOME:-$HOME/.config}/hypr/design-tokens.lua" 2>/dev/null || true

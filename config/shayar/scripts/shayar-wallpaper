@@ -127,6 +127,12 @@ reload_quickshell() {
     fi
 }
 
+reload_sddm() {
+    command -v sddm-greeter-qt6 &>/dev/null || command -v sddm &>/dev/null || return 0
+    [ -d "/usr/share/sddm/themes/shayar" ] || return 0
+    "$HOME/.config/shayar/bin/shayar-sddm-sync" 2>/dev/null && info "SDDM synced" || warn "SDDM sync failed"
+}
+
 generate_image_variants() {
     command -v magick >/dev/null 2>&1 || { warn "ImageMagick missing, skipping image variants"; return 0; }
     magick "$IMAGE_PATH" -resize 75% "$BLURRED_WALLPAPER"
@@ -220,6 +226,7 @@ else
     reload_waybar
     reload_swaync
     reload_quickshell
+    reload_sddm
     run_extensions "post-reload"
     generate_image_variants &
 fi

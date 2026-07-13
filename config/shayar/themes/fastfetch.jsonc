@@ -3,7 +3,7 @@
     "logo": {
         "source": "~/.config/fastfetch/vardan.txt",
         "color": {
-            "1": "@DT_TYPOGRAPHY_FASTFETCH_COLOR@"
+            "1": "blue"
         },
         "padding": {
             "top": 1
@@ -11,7 +11,7 @@
     },
     "display": {
         "separator": " → ",
-        "color": "@DT_TYPOGRAPHY_FASTFETCH_COLOR@"
+        "color": "blue"
     },
     "modules": [
         { "type": "custom", "format": "╭────────────────╮" },

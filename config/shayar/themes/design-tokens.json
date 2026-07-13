@@ -74,7 +74,9 @@
     "swaync_icon_size": 48,
     "waybar_font_size": 13,
     "waybar_icon_font_size": 18,
-    "waybar_battery_font_size": 14
+    "waybar_battery_font_size": 14,
+    "sddm_font": "Fira Sans",
+    "fastfetch_color": "blue"
   },
   "spacing": {
     "rounding": 10,
@@ -179,7 +181,17 @@
     "volume_slider_thumb_size": 14,
     "slurp_border_width": 1,
     "slurp_background_color": "#00000080",
-    "slurp_border_color": "#888888ff"
+    "slurp_border_color": "#888888ff",
+    "sddm_clock_size": 48,
+    "sddm_button_font_size": 14,
+    "sddm_input_width": 250,
+    "sddm_input_height": 40,
+    "sddm_input_radius": 8,
+    "sddm_layout_spacing": 20,
+    "sddm_inner_spacing": 10,
+    "sddm_blur": 32,
+    "sddm_brightness": -0.1,
+    "sddm_saturation": -0.2
   },
   "opacity": {
     "active": 1.0,

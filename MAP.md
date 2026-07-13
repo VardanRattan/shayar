@@ -168,14 +168,13 @@ Startup sequence on `hyprland.start`:
 3. Start awww-daemon (wallpaper daemon)
 4. Set cursor theme
 5. Start all listeners
-6. Start swayosd-server
-7. Start polkit agent
-8. Run `shayar-autostart` (wallpaper + nm-applet + waybar)
-9. Run `gtk.sh` (GTK settings)
-10. Start SwayNC
-11. Start hypridle
-12. Start Quickshell
-13. Load cliphist history
+6. Start polkit agent
+7. Run `shayar-autostart` (wallpaper + nm-applet + waybar)
+8. Run `gtk.sh` (GTK settings)
+9. Start SwayNC
+10. Start hypridle
+11. Start Quickshell
+12. Load cliphist history
 
 ### `conf/shayar.lua`
 Shayar-specific configuration:
@@ -347,7 +346,7 @@ Material Design 3 color definitions for Rofi.
 - Quick toggles: WiFi (nmcli), Bluetooth (rfkill), Mute (pactl), Lock (hyprlock)
 
 ### Themes:
-- `glass/` -- style.css, control_center.css, notifications.css
+- `glass/` -- style.css, control_center.css, notifications.css (solid backgrounds, token-driven)
 
 ---
 

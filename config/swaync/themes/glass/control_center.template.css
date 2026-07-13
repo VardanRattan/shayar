@@ -1,9 +1,9 @@
 @import '../../colors.css';
 
-@define-color base alpha(@surface, 0.5);
+@define-color base alpha(@surface, @DT_OPACITY_SWAYNC_BACKGROUND_ALPHA@);
 @define-color surface_custom alpha(@surface_container_high, 1);
 @define-color hovercolor alpha(@surface_container_high, 1);
-@define-color buttoncolor alpha(@inverse_primary, 0.5);
+@define-color buttoncolor alpha(@inverse_primary, @DT_OPACITY_SWAYNC_BUTTON_HOVER_ALPHA@);
 @define-color hoverbutton alpha(@inverse_primary, 0.7);
 @define-color activebutton @inverse_primary;
 @define-color fontcolor @on_surface;
@@ -15,16 +15,14 @@
   font-family: "@DT_TYPOGRAPHY_UI_SEMIBOLD@", "Font Awesome 7 Free",
     "Font Awesome 7 Brands", "Font Awesome 6 Free", "Font Awesome 6 Brands",
     FontAwesome;
-  transition: 200ms;
+  transition: @DT_ANIMATION_SWAYNC_TRANSITION@;
 }
 
 .control-center {
   background-color: @surface;
   border-radius: @DT_SPACING_SWAYNC_BORDER_RADIUS@px;
-  background: radial-gradient(circle at 50% 250%, @surface, @surface_dim) padding-box,
-    linear-gradient(@surface_bright, @on_primary) border-box;
-  border: 1px solid transparent;
-  opacity: 0.9;
+  background: alpha(@surface, @DT_OPACITY_SWAYNC_BACKGROUND_ALPHA@);
+  border: 1px solid alpha(@primary, @DT_OPACITY_SWAYNC_BUTTON_HOVER_ALPHA@);
   margin: 10px 18px 10px 10px;
   box-shadow: 0 1px 10px 1px alpha(@shadow, 0.25),
      0 2px 10px 2px alpha(@shadow, 0.25);
@@ -67,9 +65,8 @@
 .notification-row .notification-background .notification {
   background-color: @surface;
   border-radius: @DT_SPACING_SWAYNC_BORDER_RADIUS@px;
-  background: radial-gradient(circle at 50% 250%, @primary, @surface) padding-box,
-    linear-gradient(@surface_bright, @on_primary) border-box;
-  border: 1px solid transparent;
+  background: alpha(@surface_container, @DT_OPACITY_SWAYNC_NOTIFICATION_BG_ALPHA@);
+  border: 1px solid alpha(@primary, @DT_OPACITY_SWAYNC_BUTTON_HOVER_ALPHA@);
   padding: @DT_SPACING_SWAYNC_PADDING_MEDIUM@px;
   margin: 10px 0 0;
 }

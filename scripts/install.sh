@@ -60,7 +60,7 @@ phase1_packages() {
             )
             install_pkg "$pm" "${arch_pkgs[@]}"
             # AUR / arch-specific
-            install_pkg "$pm" tty-clock ttf-rubik bibata-cursor-theme awww matugen swayosd-git quickshell-git kora-icon-theme tela-circle-dracula-icon-theme bluetuith-bin 2>/dev/null || \
+            install_pkg "$pm" tty-clock ttf-rubik bibata-cursor-theme awww matugen quickshell-git kora-icon-theme tela-circle-dracula-icon-theme bluetuith-bin 2>/dev/null || \
                 warn "Some AUR packages failed. Install manually."
             ;;
         dnf)
@@ -69,7 +69,7 @@ phase1_packages() {
                 network-manager-applet jetbrains-mono-fonts fira-code-fonts fontawesome-fonts
             )
             install_pkg "$pm" "${dnf_pkgs[@]}"
-            warn "Some deps (awww, matugen, swayosd, quickshell) may not be in dnf. Install manually."
+            warn "Some deps (awww, matugen, quickshell) may not be in dnf. Install manually."
             ;;
     esac
 

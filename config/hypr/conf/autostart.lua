@@ -8,7 +8,6 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("awww-daemon")
     hl.exec_cmd("hyprctl setcursor " .. dt.typography.cursor_theme .. " " .. tostring(dt.typography.cursor_size))
     hl.exec_cmd(HOME .. "/.config/shayar/listeners.sh --startall")
-    hl.exec_cmd("swayosd-server")
     -- Dynamic Polkit agent search
     local polkits = {
         "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1",

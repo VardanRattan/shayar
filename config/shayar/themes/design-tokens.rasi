@@ -73,6 +73,8 @@
     dt-typography-waybar-font-size: "13";
     dt-typography-waybar-icon-font-size: "18";
     dt-typography-waybar-battery-font-size: "14";
+    dt-typography-sddm-font: "Fira Sans";
+    dt-typography-fastfetch-color: "blue";
     dt-spacing-rounding: 10;
     dt-spacing-rounding-power: 2;
     dt-spacing-gaps-in: 10;
@@ -176,6 +178,16 @@
     dt-spacing-slurp-border-width: 1;
     dt-spacing-slurp-background-color: #00000080;
     dt-spacing-slurp-border-color: #888888ff;
+    dt-spacing-sddm-clock-size: 48;
+    dt-spacing-sddm-button-font-size: 14;
+    dt-spacing-sddm-input-width: 250;
+    dt-spacing-sddm-input-height: 40;
+    dt-spacing-sddm-input-radius: 8;
+    dt-spacing-sddm-layout-spacing: 20;
+    dt-spacing-sddm-inner-spacing: 10;
+    dt-spacing-sddm-blur: 32;
+    dt-spacing-sddm-brightness: -0.1;
+    dt-spacing-sddm-saturation: -0.2;
     dt-opacity-active: 1.0;
     dt-opacity-inactive: 0.9;
     dt-opacity-fullscreen: 1.0;

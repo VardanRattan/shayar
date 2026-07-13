@@ -11,7 +11,7 @@ Built on the modular foundation of [ML4W Dotfiles](https://github.com/mylinuxfor
 ## What you get
 
 - **Wallpaper-driven theming** — one wallpaper change recolors terminal, bar, launcher, lock screen, notifications, and applets
-- **Single source of truth** — `design-tokens.json` (292 tokens) drives every visual value
+- **Single source of truth** — `design-tokens.json` (304 tokens) drives every visual value
 - **Solid applet UI** — clean, opaque panels with matugen colors, borders, and shadows
 - **Quickshell applets** — native QML power menu, calendar, WiFi, Bluetooth, volume, and welcome panels
 - **Zero `~/.config` pollution** — everything symlinks from this repo
@@ -73,9 +73,9 @@ wallpaper
 | Path | Component |
 |:--|:--|
 | `hypr/` | Hyprland — Lua modular config, animations, keybinds |
-| `waybar/` | Status bar — glass pill theme, token-resolved CSS |
+| `waybar/` | Status bar — semi-transparent pill theme, token-resolved CSS |
 | `rofi/` | App launcher — 5 config modes |
-| `swaync/` | Notification center — glass theme, DND toggle |
+| `swaync/` | Notification center — solid theme, DND toggle |
 | `kitty/` | Terminal — matugen colors, truecolor |
 | `quickshell/` | Applets — power, calendar, WiFi, BT, volume, welcome (QML) |
 | `shayar/` | Core — scripts, bin tools, design tokens, settings |

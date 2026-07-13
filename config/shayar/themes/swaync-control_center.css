@@ -21,36 +21,11 @@
 .control-center {
   background-color: @surface;
   border-radius: 12px;
-  background: radial-gradient(circle at 50% 250%, @surface, @surface_dim) padding-box,
-    linear-gradient(@surface_bright, @on_primary) border-box;
-  border: 1px solid transparent;
-  opacity: 0.9;
+  background: alpha(@surface, 0.5);
+  border: 1px solid alpha(@primary, 0.5);
   margin: 10px 18px 10px 10px;
   box-shadow: 0 1px 10px 1px alpha(@shadow, 0.25),
      0 2px 10px 2px alpha(@shadow, 0.25);
-}
-
-.widget-buttons-grid { margin: 10px; }
-
-.widget-buttons-grid button {
-  margin: 7px;
-  padding: 1rem 1.9rem;
-  background: @buttoncolor;
-  color: @on_primary_fixed;
-  border-radius: 12px;
-  border: 2px solid @primary;
-  font-size: 5em;
-}
-
-.widget-buttons-grid button:hover {
-  background: @hoverbutton;
-  border-radius: 12px;
-}
-
-.widget-buttons-grid button.toggle:checked {
-  background: @activebutton;
-  color: @on_primary;
-  border-radius: 12px;
 }
 
 .widget-title {
@@ -90,9 +65,8 @@
 .notification-row .notification-background .notification {
   background-color: @surface;
   border-radius: 12px;
-  background: radial-gradient(circle at 50% 250%, @primary, @surface) padding-box,
-    linear-gradient(@surface_bright, @on_primary) border-box;
-  border: 1px solid transparent;
+  background: alpha(@surface_container, 0.8);
+  border: 1px solid alpha(@primary, 0.5);
   padding: 12px;
   margin: 10px 0 0;
 }

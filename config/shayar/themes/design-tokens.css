@@ -72,6 +72,8 @@
 @define-color dt-typography-waybar-font-size 13;
 @define-color dt-typography-waybar-icon-font-size 18;
 @define-color dt-typography-waybar-battery-font-size 14;
+@define-color dt-typography-sddm-font Fira Sans;
+@define-color dt-typography-fastfetch-color blue;
 @define-color dt-spacing-rounding 10;
 @define-color dt-spacing-rounding-power 2;
 @define-color dt-spacing-gaps-in 10;
@@ -175,6 +177,16 @@
 @define-color dt-spacing-slurp-border-width 1;
 @define-color dt-spacing-slurp-background-color #00000080;
 @define-color dt-spacing-slurp-border-color #888888ff;
+@define-color dt-spacing-sddm-clock-size 48;
+@define-color dt-spacing-sddm-button-font-size 14;
+@define-color dt-spacing-sddm-input-width 250;
+@define-color dt-spacing-sddm-input-height 40;
+@define-color dt-spacing-sddm-input-radius 8;
+@define-color dt-spacing-sddm-layout-spacing 20;
+@define-color dt-spacing-sddm-inner-spacing 10;
+@define-color dt-spacing-sddm-blur 32;
+@define-color dt-spacing-sddm-brightness -0.1;
+@define-color dt-spacing-sddm-saturation -0.2;
 @define-color dt-opacity-active 1.0;
 @define-color dt-opacity-inactive 0.9;
 @define-color dt-opacity-fullscreen 1.0;

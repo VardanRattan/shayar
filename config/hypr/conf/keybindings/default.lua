@@ -31,7 +31,7 @@ hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true, descr
 -- Actions
 hl.bind("ALT + SPACE", hl.dsp.exec_cmd("shayar-menu"), { description = "Open unified settings menu" })
 hl.bind(mainMod .. " + PRINT", hl.dsp.exec_cmd("shayar-screenshot"), { description = "Take a screenshot" })
-hl.bind(mainMod .. " + CTRL + W", hl.dsp.exec_cmd(HOME .. "/.config/shayar/scripts/shayar-wallpaper --random"), { description = "Open wallpaper selector" })
+hl.bind("PRINT", hl.dsp.exec_cmd("grim -g \"$(slurp)\" - | GTK_THEME=Adwaita:dark swappy -f -"), { description = "Take an interactive screenshot with Swappy" })
 hl.bind(mainMod .. " + CTRL + RETURN", hl.dsp.exec_cmd(HOME .. "/.config/hypr/scripts/launcher.sh"), { description = "Open application launcher" })
 hl.bind(mainMod .. " + CTRL + K", hl.dsp.exec_cmd(HOME .. "/.config/hypr/scripts/keybindings.sh"), { description = "Show keybindings" })
 hl.bind(mainMod .. " + V", hl.dsp.exec_cmd(HOME .. "/.config/shayar/scripts/shayar-cliphist"), { description = "Open clipboard manager" })

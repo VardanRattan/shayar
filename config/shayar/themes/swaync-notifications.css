@@ -10,22 +10,22 @@
 }
 
 .floating-notifications.background .notification-row .notification-background .notification {
-  background-color: @surface;
+  background-color: #12131b;
   border-radius: 12px;
-  background: alpha(@surface_container, 0.8);
-  border: 1px solid alpha(@primary, 0.5);
+  background: alpha(#12131b_container, 0.8);
+  border: 1px solid alpha(#acc7ff, 0.5);
   margin: 10px 18px 10px 10px;
-  box-shadow: 1px 1px 5px 1px @shadow;
+  box-shadow: 1px 1px 5px 1px #000000;
 }
 
 .floating-notifications.background .notification-row .notification-background .notification:hover {
   transform: translateY(-1px);
-  box-shadow: 1px 2px 8px 2px alpha(@shadow, 0.4);
+  box-shadow: 1px 2px 8px 2px alpha(#000000, 0.4);
 }
 
 .floating-notifications.background .notification-row .notification-background .notification.critical {
-  background: alpha(@surface_container, 0.8);
-  border: 2px solid @error;
+  background: alpha(#12131b_container, 0.8);
+  border: 2px solid #ffb4ab;
 }
 
 .floating-notifications.background .notification-row .notification-background .close-button {
@@ -37,7 +37,7 @@
 }
 
 .floating-notifications.background .notification-row .notification-background .close-button:hover {
-  background-color: @primary;
+  background-color: #acc7ff;
   border-radius: 12px;
 }
 
@@ -55,5 +55,5 @@
 .notification.low progress,
 .notification.normal progress,
 .notification.critical progress {
-  background-color: @primary;
+  background-color: #acc7ff;
 }

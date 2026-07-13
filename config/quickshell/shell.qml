@@ -15,12 +15,7 @@ ShellRoot {
     IpcHandler {
         target: "theme-manager"
         function reload(): void {
-            if (loaderPower.item) loaderPower.item.reload()
-            if (loaderCalendar.item) loaderCalendar.item.reload()
-            if (loaderNet.item) loaderNet.item.reload()
-            if (loaderBt.item) loaderBt.item.reload()
-            if (loaderVol.item) loaderVol.item.reload()
-            if (loaderWelcome.item) loaderWelcome.item.reload()
+            ThemeManager.reload();
         }
     }
 }

@@ -8,12 +8,7 @@ logout_action()   { hyprctl dispatch 'hl.dsp.exit()'; }
 reboot_action()   { systemctl reboot; }
 poweroff_action() { systemctl poweroff; }
 
-# 2. Dynamic Check: If hyprshutdown is present, override the functions directly
-if command -v hyprshutdown &> /dev/null; then
-    logout_action()   { hyprshutdown; }
-    reboot_action()   { hyprshutdown -t 'Restarting...' --post-cmd 'reboot'; }
-    poweroff_action() { hyprshutdown -t 'Shutting down...' --post-cmd 'shutdown -P 0'; }
-fi
+
 
 # Help menu output
 show_help() {

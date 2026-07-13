@@ -104,14 +104,9 @@ run_matugen() {
 }
 
 reload_waybar() {
-    if pgrep -x waybar >/dev/null; then
-        pkill -SIGUSR2 waybar
-        info "Waybar reloaded"
-    else
-        nohup bash -c "$HOME/.config/waybar/launch.sh" >/dev/null 2>&1 &
-        disown
-        info "Waybar launched"
-    fi
+    nohup bash -c "$HOME/.config/waybar/launch.sh" >/dev/null 2>&1 &
+    disown
+    info "Waybar reloaded"
 }
 
 reload_swaync() {
@@ -135,13 +130,18 @@ reload_sddm() {
 
 generate_image_variants() {
     command -v magick >/dev/null 2>&1 || { warn "ImageMagick missing, skipping image variants"; return 0; }
-    magick "$IMAGE_PATH" -resize 75% "$BLURRED_WALLPAPER"
+    
     local blur="${BLUR:-50x30}"
     if [ "$blur" != "0x0" ]; then
-        magick "$BLURRED_WALLPAPER" -blur "$blur" "$BLURRED_WALLPAPER"
+        # Blazing fast: Scale down to 10%, apply small blur, scale back up.
+        # This avoids CPU-intensive full-res convolution blurs.
+        magick "$IMAGE_PATH" -scale 10% -blur 0x5 -resize 1000% "$BLURRED_WALLPAPER"
+    else
+        magick "$IMAGE_PATH" -resize 75% "$BLURRED_WALLPAPER"
     fi
     info "Blurred wallpaper created"
-    magick "$IMAGE_PATH" -gravity Center -extent 1:1 "$SQUARE_WALLPAPER"
+    
+    magick "$IMAGE_PATH" -gravity Center -extent 1:1 -scale 500x500 "$SQUARE_WALLPAPER"
     info "Square wallpaper created"
     echo "* { current-image: url(\"$BLURRED_WALLPAPER\", height); }" > "$RASI_FILE"
     info "Rasi file updated"

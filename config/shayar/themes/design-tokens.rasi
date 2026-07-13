@@ -219,10 +219,10 @@
     dt-animation-bezier-hyprnostretch: "0.05 0.9, 0.1 1.0";
     dt-animation-bezier-menu-decel: "0.1 1, 0 1";
     dt-animation-bezier-menu-accel: "0.38 0.04, 1 0.07";
-    dt-animation-bezier-easeInOutCirc: "0.85 0, 0.15 1";
-    dt-animation-bezier-easeOutCirc: "0 0.55, 0.45 1";
-    dt-animation-bezier-easeOutExpo: "0.16 1, 0.3 1";
-    dt-animation-bezier-softAcDecel: "0.26 0.26, 0.15 1";
+    dt-animation-bezier-easeinoutcirc: "0.85 0, 0.15 1";
+    dt-animation-bezier-easeoutcirc: "0 0.55, 0.45 1";
+    dt-animation-bezier-easeoutexpo: "0.16 1, 0.3 1";
+    dt-animation-bezier-softacdecel: "0.26 0.26, 0.15 1";
     dt-animation-bezier-md2: "0.4 0, 0.2 1";
     dt-animation-speed-window: 3;
     dt-animation-speed-border: 10;
@@ -258,7 +258,7 @@
     dt-gtk-cursor-theme-size: 24;
     dt-gtk-dark-mode-preference: 1;
     dt-quickshell-panel-width: 180;
-    dt-quickshell-panel-width-wide: 320;
+    dt-quickshell-panel-width-wide: 380;
     dt-quickshell-panel-width-vol: 200;
     dt-quickshell-panel-radius: 40;
     dt-quickshell-net-panel-radius: 24;

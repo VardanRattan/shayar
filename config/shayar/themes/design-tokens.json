@@ -274,7 +274,7 @@
   },
   "quickshell": {
     "panel_width": 180,
-    "panel_width_wide": 320,
+    "panel_width_wide": 380,
     "panel_width_vol": 200,
     "panel_radius": 40,
     "net_panel_radius": 24,

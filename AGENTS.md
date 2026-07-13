@@ -47,7 +47,7 @@ Available extensions in `config/shayar/extensions/available/`:
 | `config/kitty/` | Terminal emulator |
 | `config/shayar/` | Core engine: settings, themes, scripts, bin, listeners |
 | `config/shayar/settings/shayar.conf` | All user-facing settings |
-| `config/shayar/scripts/` | 13 shayar scripts (shayar-wallpaper, shayar-design-tokens, etc.) |
+| `config/shayar/scripts/` | 14 scripts (shayar-wallpaper, shayar-design-tokens, design_tokens.py, etc.) |
 | `config/shayar/bin/` | 18 CLI tools available system-wide |
 | `config/shayar/themes/design-tokens.json` | **Single source of truth** for all visual values |
 | `config/shayar/themes/glass/theme.sh` | Theme activator |
@@ -134,7 +134,7 @@ validate → cache → wait for awww → `awww img` → matugen → reload wayba
 - Updates check at **30min interval**
 - Low battery listener polls at **60s**
 - Startup: ~13 steps in `autostart.lua`, ~5 actions in `shayar-autostart`
-- ~26 shell scripts total, all lean (<150 lines each except shayar-design-tokens at 326 and shayar-wallpaper at 228)
+- ~26 shell scripts + 1 Python compiler script total, all lean (<150 lines each except `shayar-wallpaper` at 228)
 
 ## Dependencies
 

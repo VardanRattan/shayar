@@ -48,7 +48,7 @@ phase1_packages() {
 
     local official=(
         brightnessctl eza fastfetch fzf grim hypridle hyprland hyprlock imagemagick jq
-        kitty lua playerctl rofi slurp swaync waybar zsh
+        kitty lua playerctl python rofi slurp swaync swappy waybar zsh
         wl-clipboard yad flatpak
     )
 
@@ -82,6 +82,10 @@ phase1_packages() {
             warn "cargo not found. Install Rust first: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
         fi
     fi
+
+    # Create screenshots directory for Swappy out-of-the-box compatibility
+    mkdir -p "$HOME/Pictures/Screenshots"
+    info "Created screenshot directory: ~/Pictures/Screenshots"
 }
 
 # ---- phase 2: oh-my-zsh & plugins ----
@@ -167,6 +171,7 @@ print_summary() {
     echo "  1. Log out and back in, or run: chsh -s /usr/bin/zsh"
     echo "  2. Set your wallpaper: shayar-wallpaper ~/path/to/image.jpg"
     echo "  3. (Optional) review config/shayar/settings/shayar.conf"
+    echo "  4. (Optional) Sync SDDM login screen theme: shayar-sddm-sync --install"
     echo ""
 }
 

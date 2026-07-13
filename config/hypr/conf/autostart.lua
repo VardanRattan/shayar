@@ -7,6 +7,27 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("systemctl --user start xdg-desktop-portal-hyprland xdg-desktop-portal")
     hl.exec_cmd("awww-daemon")
     hl.exec_cmd("hyprctl setcursor " .. dt.typography.cursor_theme .. " " .. tostring(dt.typography.cursor_size))
+
+    -- Dynamic scaling propagation for HiDPI screens
+    local scale_handle = io.popen("hyprctl monitors -j 2>/dev/null")
+    if scale_handle then
+        local raw_json = scale_handle:read("*a")
+        scale_handle:close()
+        if raw_json and raw_json ~= "" then
+            -- Simple Lua-native JSON-like extraction to avoid external dependencies
+            local scale_str = raw_json:match('"scale":%s*([%d%.]+)')
+            if scale_str then
+                local scale = tonumber(scale_str)
+                if scale and scale > 1.0 then
+                    local scale_int = math.floor(scale + 0.5)
+                    hl.exec_cmd("hyprctl setenv GDK_SCALE " .. tostring(scale_int))
+                    hl.exec_cmd("hyprctl setenv QT_SCALE_FACTOR " .. tostring(scale))
+                    hl.exec_cmd("dbus-update-activation-environment --systemd GDK_SCALE QT_SCALE_FACTOR")
+                end
+            end
+        end
+    end
+
     hl.exec_cmd(HOME .. "/.config/shayar/listeners.sh --startall")
     -- Dynamic Polkit agent search
     local polkits = {

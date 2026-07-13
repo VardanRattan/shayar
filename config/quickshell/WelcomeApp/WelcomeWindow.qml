@@ -1,3 +1,4 @@
+import ".."
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
@@ -5,125 +6,34 @@ import Quickshell.Io
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Effects
-
 PanelWindow {
     id: root
-
-    function reload(): void {
-        colorReader.running = false
-        colorReader.running = true
-        tokenReader.running = false
-        tokenReader.running = true
-    }
-
     WlrLayershell.layer: WlrLayer.Overlay
     exclusionMode: WlrLayershell.Ignore
-
     implicitWidth: root.ready ? root.tokens.welcome_panel_width : 420
     implicitHeight: contentColumn.implicitHeight + 48
     color: "transparent"
-
     Shortcut {
         sequence: "Escape"
         onActivated: { if (root.isOpen) root.isOpen = false }
     }
-
     property bool isOpen: false
     property bool pendingOpen: false
-    property bool ready: false
-    property bool colorsLoaded: false
-    property bool tokensLoaded: false
+    readonly property var colors: ThemeManager.colors
+    readonly property var tokens: ThemeManager.tokens
+    readonly property bool ready: ThemeManager.ready
     property bool welcomed: false
-
     Component.onCompleted: {
         welcomeCheck.running = true
     }
-
     visible: ready && (isOpen || root.pendingOpen)
-
     margins {
         left: Math.round((Screen.width - (root.ready ? root.tokens.welcome_panel_width : 420)) / 2)
         top: Math.round((Screen.height - contentColumn.implicitHeight - 48) / 2)
     }
-
     Behavior on margins.top {
         NumberAnimation { duration: 350; easing.type: Easing.OutQuint }
     }
-
-    property QtObject colors: QtObject {
-        property color background: "#12131b"
-        property color primary: "#acc7ff"
-        property color on_primary: "#062f64"
-        property color on_surface: "#e4e1ee"
-        property color surface_dim: "#12131b"
-        property color surface_container: "#1f1f28"
-        property color surface_container_high: "#292932"
-        property color surface_bright: "#393842"
-        property color shadow: "#000000"
-        property color on_surface_variant: "#c4c6d1"
-        property color error: "#ffb4ab"
-        property color tertiary: "#ffb3b0"
-        property color outline_variant: "#43474f"
-
-        function updateFromJson(jsonString) {
-            try {
-                var c = JSON.parse(jsonString)
-                if (!c || Object.keys(c).length === 0) return false
-                if (c.background) background = c.background
-                if (c.primary) primary = c.primary
-                if (c.on_primary) on_primary = c.on_primary
-                if (c.on_surface) on_surface = c.on_surface
-                if (c.surface_dim) surface_dim = c.surface_dim
-                if (c.surface_container) surface_container = c.surface_container
-                if (c.surface_container_high) surface_container_high = c.surface_container_high
-                if (c.surface_bright) surface_bright = c.surface_bright
-                if (c.shadow) shadow = c.shadow
-                if (c.on_surface_variant) on_surface_variant = c.on_surface_variant
-                if (c.error) error = c.error
-                if (c.tertiary) tertiary = c.tertiary
-                if (c.outline_variant) outline_variant = c.outline_variant
-                return true
-            } catch (e) {
-                console.log("Failed to parse quickshell colors: " + e)
-                return false
-            }
-        }
-    }
-
-    property QtObject tokens: QtObject {
-        property int welcome_panel_width: 420
-        property int welcome_panel_radius: 24
-        property int waybar_clearance: 42
-        property int font_size_label: 13
-        property int font_size_small: 11
-        property int font_size_title: 16
-        property int font_size_body: 12
-        property int icon_size: 18
-        property int button_height: 56
-        property real primary_alpha: 0.9
-
-        function updateFromJson(jsonString) {
-            try {
-                var t = JSON.parse(jsonString)
-                if (!t || Object.keys(t).length === 0) return false
-                if (t.welcome_panel_width !== undefined) welcome_panel_width = t.welcome_panel_width
-                if (t.welcome_panel_radius !== undefined) welcome_panel_radius = t.welcome_panel_radius
-                if (t.waybar_clearance !== undefined) waybar_clearance = t.waybar_clearance
-                if (t.font_size_label !== undefined) font_size_label = t.font_size_label
-                if (t.font_size_small !== undefined) font_size_small = t.font_size_small
-                if (t.font_size_title !== undefined) font_size_title = t.font_size_title
-                if (t.font_size_body !== undefined) font_size_body = t.font_size_body
-                if (t.icon_size !== undefined) icon_size = t.icon_size
-                if (t.button_height !== undefined) button_height = t.button_height
-                if (t.primary_alpha !== undefined) primary_alpha = t.primary_alpha
-                return true
-            } catch (e) {
-                console.log("Failed to parse quickshell tokens: " + e)
-                return false
-            }
-        }
-    }
-
     Process {
         id: welcomeCheck
         command: ["cat", Quickshell.env("HOME") + "/.config/shayar/.welcomed"]
@@ -139,39 +49,11 @@ PanelWindow {
         }
         running: false
     }
-
     Process {
         id: markWelcomed
         command: ["bash", "-c", "echo '1' > " + Quickshell.env("HOME") + "/.config/shayar/.welcomed"]
         running: false
     }
-
-    Process {
-        id: colorReader
-        command: ["cat", Quickshell.env("HOME") + "/.config/shayar/colors/quickshell.json"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                root.colorsLoaded = root.colors.updateFromJson(this.text.trim())
-                root.ready = root.colorsLoaded && root.tokensLoaded
-                colorReader.running = false
-            }
-        }
-        running: true
-    }
-
-    Process {
-        id: tokenReader
-        command: ["cat", Quickshell.env("HOME") + "/.config/shayar/colors/quickshell-tokens.json"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                root.tokensLoaded = root.tokens.updateFromJson(this.text.trim())
-                root.ready = root.colorsLoaded && root.tokensLoaded
-                tokenReader.running = false
-            }
-        }
-        running: true
-    }
-
     Rectangle {
         id: panelBg
         anchors.fill: contentColumn
@@ -181,7 +63,6 @@ PanelWindow {
         border.color: Qt.rgba(root.colors.outline_variant.r, root.colors.outline_variant.g, root.colors.outline_variant.b, 0.2)
         border.width: 1
     }
-
     RectangularShadow {
         z: -1
         anchors.fill: panelBg
@@ -191,13 +72,11 @@ PanelWindow {
         opacity: root.isOpen ? 1.0 : 0.0
         Behavior on opacity { NumberAnimation { duration: 200 } }
     }
-
     ColumnLayout {
         id: contentColumn
         width: root.ready ? root.tokens.welcome_panel_width - 48 : 372
         anchors.centerIn: parent
         spacing: 0
-
         // Close button — top right corner, overlapping the header
         Rectangle {
             id: closeBtn
@@ -212,14 +91,12 @@ PanelWindow {
             color: closeMa.containsMouse
                 ? Qt.rgba(root.colors.error.r, root.colors.error.g, root.colors.error.b, 0.3)
                 : Qt.rgba(root.colors.surface_bright.r, root.colors.surface_bright.g, root.colors.surface_bright.b, 0.3)
-
             Text {
                 anchors.centerIn: parent
                 text: "\u2715"
                 font.pixelSize: 14
                 color: closeMa.containsMouse ? root.colors.error : root.colors.on_surface_variant
             }
-
             MouseArea {
                 id: closeMa
                 anchors.fill: parent
@@ -231,13 +108,11 @@ PanelWindow {
                 }
             }
         }
-
         // Logo — centered, prominent
         ColumnLayout {
             Layout.fillWidth: true
             Layout.bottomMargin: 20
             spacing: 12
-
             Image {
                 source: Quickshell.env("HOME") + "/.config/shayar/assets/shayar-logo.png"
                 Layout.preferredWidth: 80
@@ -245,7 +120,6 @@ PanelWindow {
                 Layout.alignment: Qt.AlignHCenter
                 fillMode: Image.PreserveAspectFit
             }
-
             Text {
                 text: "Welcome to Shayar"
                 font.family: "Fira Sans"
@@ -254,7 +128,6 @@ PanelWindow {
                 color: root.colors.on_surface
                 Layout.alignment: Qt.AlignHCenter
             }
-
             Text {
                 text: "Your Hyprland desktop is ready. Here are the essentials:"
                 font.family: "Fira Sans"
@@ -266,7 +139,6 @@ PanelWindow {
                 horizontalAlignment: Text.AlignHCenter
             }
         }
-
         // Divider
         Rectangle {
             Layout.fillWidth: true
@@ -274,7 +146,6 @@ PanelWindow {
             height: 1
             color: Qt.rgba(root.colors.outline_variant.r, root.colors.outline_variant.g, root.colors.outline_variant.b, 0.2)
         }
-
         // Keybindings
         Text {
             text: "KEYBINDINGS"
@@ -285,7 +156,6 @@ PanelWindow {
             font.letterSpacing: 1.2
             Layout.bottomMargin: 8
         }
-
         Repeater {
             model: ListModel {
                 ListElement { key: "SUPER + Return"; action: "Terminal" }
@@ -299,12 +169,10 @@ PanelWindow {
                 ListElement { key: "SUPER + SHIFT + B"; action: "Toggle Statusbar" }
                 ListElement { key: "SUPER + CTRL + H"; action: "This Screen" }
             }
-
             delegate: RowLayout {
                 Layout.fillWidth: true
                 Layout.bottomMargin: 6
                 spacing: 12
-
                 Rectangle {
                     Layout.preferredWidth: 140
                     Layout.preferredHeight: 28
@@ -312,7 +180,6 @@ PanelWindow {
                     color: Qt.rgba(root.colors.surface_bright.r, root.colors.surface_bright.g, root.colors.surface_bright.b, 0.4)
                     border.color: Qt.rgba(root.colors.outline_variant.r, root.colors.outline_variant.g, root.colors.outline_variant.b, 0.15)
                     border.width: 1
-
                     Text {
                         anchors.centerIn: parent
                         text: model.key
@@ -321,7 +188,6 @@ PanelWindow {
                         color: root.colors.primary
                     }
                 }
-
                 Text {
                     text: model.action
                     font.family: "Fira Sans"
@@ -331,7 +197,6 @@ PanelWindow {
                 }
             }
         }
-
         // Divider
         Rectangle {
             Layout.fillWidth: true
@@ -340,7 +205,6 @@ PanelWindow {
             height: 1
             color: Qt.rgba(root.colors.outline_variant.r, root.colors.outline_variant.g, root.colors.outline_variant.b, 0.2)
         }
-
         // Quick launch buttons
         Text {
             text: "QUICK LAUNCH"
@@ -351,25 +215,21 @@ PanelWindow {
             font.letterSpacing: 1.2
             Layout.bottomMargin: 8
         }
-
         RowLayout {
             Layout.fillWidth: true
             spacing: 8
-
             Repeater {
                 model: ListModel {
                     ListElement { label: "Terminal"; cmd: "kitty" }
                     ListElement { label: "Browser"; cmd: "firefox" }
                     ListElement { label: "Launcher"; cmd: "~/.config/hypr/scripts/launcher.sh" }
                 }
-
                 delegate: Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 40
                     radius: 10
                     color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.primary_alpha)
                     opacity: launchMa.containsMouse ? 0.9 : 0.75
-
                     Text {
                         anchors.centerIn: parent
                         text: model.label
@@ -378,7 +238,6 @@ PanelWindow {
                         font.bold: true
                         color: root.colors.on_primary
                     }
-
                     MouseArea {
                         id: launchMa
                         anchors.fill: parent
@@ -389,14 +248,12 @@ PanelWindow {
                             root.isOpen = false
                         }
                     }
-
                     Behavior on opacity {
                         NumberAnimation { duration: 150 }
                     }
                 }
             }
         }
-
         // Footer
         Rectangle {
             Layout.fillWidth: true
@@ -404,7 +261,6 @@ PanelWindow {
             height: 1
             color: Qt.rgba(root.colors.outline_variant.r, root.colors.outline_variant.g, root.colors.outline_variant.b, 0.2)
         }
-
         Text {
             text: "Run shayar-welcome anytime to see this again"
             font.family: "Fira Sans"
@@ -414,7 +270,6 @@ PanelWindow {
             Layout.topMargin: 8
         }
     }
-
     IpcHandler {
         target: "welcome"
         function toggle(): void {

@@ -1,8 +1,8 @@
 @import '../../colors.css';
 
-@define-color base alpha(@surface, 0.5);
-@define-color surface_custom alpha(@surface_container_high, 1);
-@define-color hovercolor alpha(@surface_container_high, 1);
+@define-color base alpha(#12131b, 0.5);
+@define-color surface_custom alpha(#12131b_container_high, 1);
+@define-color hovercolor alpha(#12131b_container_high, 1);
 @define-color buttoncolor alpha(@inverse_primary, 0.5);
 @define-color hoverbutton alpha(@inverse_primary, 0.7);
 @define-color activebutton @inverse_primary;
@@ -19,13 +19,13 @@
 }
 
 .control-center {
-  background-color: @surface;
+  background-color: #12131b;
   border-radius: 12px;
-  background: alpha(@surface, 0.5);
-  border: 1px solid alpha(@primary, 0.5);
+  background: alpha(#12131b, 0.5);
+  border: 1px solid alpha(#acc7ff, 0.5);
   margin: 10px 18px 10px 10px;
-  box-shadow: 0 1px 10px 1px alpha(@shadow, 0.25),
-     0 2px 10px 2px alpha(@shadow, 0.25);
+  box-shadow: 0 1px 10px 1px alpha(#000000, 0.25),
+     0 2px 10px 2px alpha(#000000, 0.25);
 }
 
 .widget-title {
@@ -34,13 +34,13 @@
 }
 
 .widget-title button {
-  background: @surface_custom;
+  background: #12131b_custom;
   border-radius: 12px;
   padding: 4px 16px;
 }
 
 .widget-title button:hover {
-  background: alpha(@primary, 0.3);
+  background: alpha(#acc7ff, 0.3);
   border-radius: 12px;
 }
 
@@ -55,7 +55,7 @@
 .widget-dnd > switch:checked { background: @buttoncolor; }
 
 .widget-dnd > switch slider {
-  background: @primary;
+  background: #acc7ff;
   border-radius: 5px;
   border: 2px solid @buttoncolor;
 }
@@ -63,16 +63,16 @@
 .widget-dnd > switch:checked slider { background: @inverse_primary; }
 
 .notification-row .notification-background .notification {
-  background-color: @surface;
+  background-color: #12131b;
   border-radius: 12px;
-  background: alpha(@surface_container, 0.8);
-  border: 1px solid alpha(@primary, 0.5);
+  background: alpha(#12131b_container, 0.8);
+  border: 1px solid alpha(#acc7ff, 0.5);
   padding: 12px;
   margin: 10px 0 0;
 }
 
 .notification-row .notification-background .notification.critical {
-  border: 2px solid @error;
+  border: 2px solid #ffb4ab;
 }
 
 .notification-row .notification-background .close-button {
@@ -93,7 +93,7 @@
 
 .notification-group-collapse-button,
 .notification-group-close-all-button {
-  background: @surface_container;
+  background: #12131b_container;
   border-radius: 5px;
   padding: 5px;
 }
@@ -104,7 +104,7 @@
 }
 
 trough highlight {
-  background: @primary;
-  border: 2px solid @primary_fixed;
+  background: #acc7ff;
+  border: 2px solid #acc7ff_fixed;
   border-radius: 12px;
 }

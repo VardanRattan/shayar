@@ -5,7 +5,7 @@
 # Splash on fresh terminal login
 if [ -z "$SHAYAR_SPLASH_DONE" ] && [ -n "$PS1" ]; then
     export SHAYAR_SPLASH_DONE=1
-    fastfetch --config "$HOME/.config/fastfetch/config.jsonc" 2>/dev/null || true
+    fastfetch --config "$HOME/.config/shayar/themes/fastfetch.jsonc" 2>/dev/null || true
 fi
 
 # The 'finder' command (Fuzzy Finder)

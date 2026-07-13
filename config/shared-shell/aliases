@@ -7,7 +7,7 @@
 # -----------------------------------------------------
 alias ..='cd ..'
 alias c='clear'
-alias nf='fastfetch --config ~/.config/fastfetch/config.jsonc 2>/dev/null || neofetch'
+alias nf='fastfetch --config ~/.config/shayar/themes/fastfetch.jsonc 2>/dev/null || neofetch'
 alias ls='eza -a --icons=always'
 alias ll='eza -al --icons=always'
 alias lt='eza -a --tree --level=1 --icons=always'

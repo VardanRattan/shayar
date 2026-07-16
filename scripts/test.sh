@@ -19,10 +19,18 @@ skip()  { echo "  SKIP  $1"; SKIP=$((SKIP + 1)); }
 check() {
     local name="$1"
     shift
-    if "$@" >/dev/null 2>&1; then
+    local tmp_log
+    tmp_log=$(mktemp)
+    if "$@" >"$tmp_log" 2>&1; then
         pass "$name"
+        rm -f "$tmp_log"
     else
         fail "$name"
+        echo "=========================================" >&2
+        echo "ERROR in: $name" >&2
+        cat "$tmp_log" >&2
+        echo "=========================================" >&2
+        rm -f "$tmp_log"
     fi
 }
 
@@ -43,7 +51,7 @@ done
 # ------------------------------------------------------------------
 echo "--- Syntax checks ---"
 # ------------------------------------------------------------------
-for f in config/shayar/scripts/shayar-* config/shayar/themes/glass/theme.sh config/shayar/bin/shayar-* config/shayar/library.sh; do
+for f in config/shayar/scripts/* config/shayar/themes/glass/theme.sh config/shayar/bin/* config/shayar/library.sh; do
     if [ -f "$f" ]; then
         shebang=$(head -1 "$f")
         case "$shebang" in

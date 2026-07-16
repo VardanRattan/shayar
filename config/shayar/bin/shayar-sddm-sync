@@ -4,10 +4,10 @@ set -euo pipefail
 # shayar-sddm-sync — Sync wallpaper and matugen colors to SDDM login screen
 # Requires: SDDM installed, shayar SDDM theme in /usr/share/sddm/themes/shayar/
 # Usage: shayar-sddm-sync [--theme-dir /path/to/theme]
-
 THEME_DIR="/usr/share/sddm/themes/shayar"
 BACKGROUNDS_DIR="$THEME_DIR/backgrounds"
 SHAYAR_JSON="${HOME}/.config/shayar/themes/shayar.json"
+CACHE_DIR="/var/cache/shayar/sddm"
 
 # Source design tokens for SDDM values
 source "${HOME}/.config/shayar/themes/design-tokens.env" 2>/dev/null || true
@@ -28,7 +28,7 @@ Usage:
   shayar-sddm-sync --help       Show this help
 
 The theme must be installed first with --install. After that, run
-shayar-sddm-sync after every wallpaper change to update the login screen.
+  shayar-sddm-sync after every wallpaper change to update the login screen.
 EOF
 }
 
@@ -90,96 +90,23 @@ generate_theme_conf() {
     local outline=$(get_color "outline")
     local outline_variant=$(get_color "outline_variant")
 
-    cat > "$THEME_DIR/theme.conf.user" <<EOF
+    cat > "$CACHE_DIR/theme.conf.user" <<EOF
 [General]
 background-fill-mode = "fill"
-
-[LoginScreen]
 background = "${wallpaper_file}"
-use-background-color = true
-background-color = "${bg}"
-blur = ${DT_SPACING_SDDM_BLUR:-0}
-
-[LockScreen]
-background = "${wallpaper_file}"
-use-background-color = true
-background-color = "${bg}"
-blur = ${DT_SPACING_SDDM_BLUR:-32}
-brightness = ${DT_SPACING_SDDM_BRIGHTNESS:--0.1}
-saturation = ${DT_SPACING_SDDM_SATURATION:--0.2}
-
-[LockScreen.Clock]
-color = "${on_surface}"
-
-[LockScreen.Date]
-color = "${on_surface_variant}"
-
-[LoginScreen.LoginArea.PasswordInput]
-content-color = "${on_surface}"
-background-color = "${surface_container}"
-background-opacity = 0.3
-border-color = "${outline_variant}"
-border-size = 1
-
-[LoginScreen.LoginArea.PasswordInput.Text]
-color = "${on_surface}"
-
-[LoginScreen.LoginArea.PasswordInput.placeholder]
-color = "${on_surface_variant}"
-
-[LoginScreen.LoginArea.LoginButton]
-background-color = "${primary}"
-background-opacity = 0.9
-active-background-color = "${primary}"
-active-background-opacity = 1.0
-content-color = "${on_primary}"
-border-color = "${primary}"
-border-size = 0
-
-[LoginScreen.LoginArea.LoginButton.Hover]
-content-color = "${on_primary}"
-
-[LoginScreen.LoginArea.WarningMessage]
-normal-color = "${on_surface_variant}"
-warning-color = "${error}"
-error-color = "${error}"
-
-[LoginScreen.LoginArea.SessionSelect]
-background-color = "${surface_container}"
-background-opacity = 0.3
-content-color = "${on_surface}"
-border-color = "${outline_variant}"
-border-size = 1
-
-[LoginScreen.LoginArea.SessionSelect.Popups]
-background-color = "${surface_container_high}"
-background-opacity = 0.9
-content-color = "${on_surface}"
-active-option-background-color = "${primary_container}"
-active-option-background-opacity = 0.3
-active-content-color = "${on_surface}"
-border-color = "${outline_variant}"
-border-size = 1
-
-[LoginScreen.MenuArea.PowerButton]
-content-color = "${on_surface_variant}"
-hover-color = "${error}"
-
-[LoginScreen.MenuArea.KeyboardButton]
-content-color = "${on_surface_variant}"
-hover-color = "${primary}"
-
-[LoginScreen.VirtualKeyboard]
-background-color = "${surface}"
-background-opacity = 0.9
-key-content-color = "${on_surface}"
-key-color = "${surface_container_high}"
-key-opacity = 0.5
-
-[LoginScreen.ForceSize]
-scale = 1.0
+clock_color = "${on_surface}"
+input_text_color = "${on_surface}"
+input_placeholder_color = "${on_surface_variant}"
+input_bg_color = "${surface_container}"
+input_bg_opacity = 0.3
+input_border_color = "${outline_variant}"
+input_border_size = 1
+button_text_color = "${on_primary}"
+button_bg_color = "${primary}"
+button_bg_opacity = 0.9
 EOF
 
+    chmod 644 "$CACHE_DIR/theme.conf.user"
     info "Generated theme.conf.user with matugen colors"
 }
 
@@ -198,23 +125,50 @@ install_theme() {
 
     info "Installing SDDM theme..."
 
+    # Create cache directory and set permissions
+    sudo mkdir -p "$CACHE_DIR"
+    sudo chown -R "$USER:" "$CACHE_DIR"
+    sudo chmod 755 "$CACHE_DIR"
+
+    # Create default theme.conf.user and placeholders in cache
+    local wp=$(get_wallpaper)
+    cp "$wp" "$CACHE_DIR/blurred.png" 2>/dev/null || touch "$CACHE_DIR/blurred.png"
+    cp "$wp" "$CACHE_DIR/avatar.png" 2>/dev/null || touch "$CACHE_DIR/avatar.png"
+
+    cat > "$CACHE_DIR/theme.conf.user" <<EOF
+[General]
+background-fill-mode = "fill"
+background = "blurred.png"
+clock_color = "#ffffff"
+input_text_color = "#ffffff"
+input_placeholder_color = "#888888"
+input_bg_color = "#1f1f28"
+input_bg_opacity = 0.3
+input_border_color = "#43474f"
+input_border_size = 1
+button_text_color = "#ffffff"
+button_bg_color = "#acc7ff"
+button_bg_opacity = 0.9
+EOF
+    chmod 644 "$CACHE_DIR/theme.conf.user" "$CACHE_DIR/blurred.png" "$CACHE_DIR/avatar.png"
+
     # Create theme structure
     sudo mkdir -p "$BACKGROUNDS_DIR"
 
     # Create minimal Main.qml
-    sudo tee "$THEME_DIR/Main.qml" > /dev/null <<'QML'
-import QtQuick 2.15
-import QtQuick.Layouts 1.15
-import QtQuick.Controls 2.15
-import SddmComponents 2.0
+    sudo tee "$THEME_DIR/Main.qml" > /dev/null <<QML
+import QtQuick
+import QtQuick.Layouts
+import QtQuick.Controls as Controls
+import SddmComponents
 
 Item {
     id: root
     property int sessionIndex: sessionCombo.currentIndex
 
-    Background {
+    Image {
         anchors.fill: parent
-        source: "backgrounds/" + config.getString("background", "default.jpg")
+        source: Qt.resolvedUrl("backgrounds/blurred.png")
         fillMode: Image.PreserveAspectCrop
     }
 
@@ -222,86 +176,209 @@ Item {
         anchors.fill: parent
         color: "transparent"
 
-        ColumnLayout {
+        // Center Login Card
+        Column {
             anchors.centerIn: parent
-            spacing: ${DT_SPACING_SDDM_LAYOUT_SPACING:-20}
+            spacing: 24
 
-            Clock {
-                id: clock
-                timeColor: config.getString("LockScreen.Clock.color", "#ffffff")
-                dateColor: config.getString("LockScreen.Date.color", "#ffffff")
-                fontFamily: "${DTTypography_SDDM_Font:-Fira Sans}"
-                fontSize: ${DT_SPACING_SDDM_CLOCK_SIZE:-48}
+            // Avatar Container
+            Rectangle {
+                id: avatarContainer
+                width: 120
+                height: 120
+                radius: 30
+                color: "transparent"
+                border.color: config.button_bg_color
+                border.width: 2
+                anchors.horizontalCenter: parent.horizontalCenter
+                clip: true
+
+                Image {
+                    id: avatarImage
+                    anchors.fill: parent
+                    source: Qt.resolvedUrl("backgrounds/avatar.png")
+                    fillMode: Image.PreserveAspectCrop
+                    onStatusChanged: {
+                        if (status === Image.Error) {
+                            source = Qt.resolvedUrl("backgrounds/blurred.png")
+                        }
+                    }
+                }
             }
 
-            ColumnLayout {
-                spacing: ${DT_SPACING_SDDM_INNER_SPACING:-10}
-                Layout.alignment: Qt.AlignHCenter
+            // Input Fields
+            Column {
+                spacing: 12
+                anchors.horizontalCenter: parent.horizontalCenter
 
-                TextField {
+                Controls.TextField {
                     id: username
-                    Layout.preferredWidth: ${DT_SPACING_SDDM_INPUT_WIDTH:-250}
-                    Layout.preferredHeight: ${DT_SPACING_SDDM_INPUT_HEIGHT:-40}
+                    width: 280
+                    height: 46
                     placeholderText: "Username"
-                    color: config.getString("LoginScreen.LoginArea.PasswordInput.Text.color", "#ffffff")
-                    placeholderTextColor: config.getString("LoginScreen.LoginArea.PasswordInput.placeholder.color", "#888888")
+                    text: userModel.lastUser || ""
+                    color: config.input_text_color
+                    placeholderTextColor: config.input_placeholder_color
+                    font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
+                    font.pixelSize: 14
+                    selectByMouse: true
+                    
                     background: Rectangle {
-                        radius: ${DT_SPACING_SDDM_INPUT_RADIUS:-8}
-                        color: config.getString("LoginScreen.LoginArea.PasswordInput.background-color", "#1f1f28")
-                        opacity: config.realValue("LoginScreen.LoginArea.PasswordInput.background-opacity", 0.3)
-                        border.color: config.getString("LoginScreen.LoginArea.PasswordInput.border-color", "#43474f")
-                        border.width: config.intValue("LoginScreen.LoginArea.PasswordInput.border-size", 1)
+                        radius: 12
+                        color: config.input_bg_color
+                        opacity: username.activeFocus ? 0.4 : config.input_bg_opacity
+                        border.color: username.activeFocus ? config.button_bg_color : config.input_border_color
+                        border.width: username.activeFocus ? 2 : config.input_border_size
                     }
                     onAccepted: password.forceActiveFocus()
                 }
 
-                TextField {
+                Controls.TextField {
                     id: password
-                    Layout.preferredWidth: ${DT_SPACING_SDDM_INPUT_WIDTH:-250}
-                    Layout.preferredHeight: ${DT_SPACING_SDDM_INPUT_HEIGHT:-40}
+                    width: 280
+                    height: 46
                     placeholderText: "Password"
                     echoMode: TextInput.Password
-                    color: config.getString("LoginScreen.LoginArea.PasswordInput.Text.color", "#ffffff")
-                    placeholderTextColor: config.getString("LoginScreen.LoginArea.PasswordInput.placeholder.color", "#888888")
+                    color: config.input_text_color
+                    placeholderTextColor: config.input_placeholder_color
+                    font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
+                    font.pixelSize: 14
+                    selectByMouse: true
+                    
                     background: Rectangle {
-                        radius: ${DT_SPACING_SDDM_INPUT_RADIUS:-8}
-                        color: config.getString("LoginScreen.LoginArea.PasswordInput.background-color", "#1f1f28")
-                        opacity: config.realValue("LoginScreen.LoginArea.PasswordInput.background-opacity", 0.3)
-                        border.color: config.getString("LoginScreen.LoginArea.PasswordInput.border-color", "#43474f")
-                        border.width: config.intValue("LoginScreen.LoginArea.PasswordInput.border-size", 1)
+                        radius: 12
+                        color: config.input_bg_color
+                        opacity: password.activeFocus ? 0.4 : config.input_bg_opacity
+                        border.color: password.activeFocus ? config.button_bg_color : config.input_border_color
+                        border.width: password.activeFocus ? 2 : config.input_border_size
                     }
                     onAccepted: loginButton.clicked()
                 }
 
-                Button {
-                    id: loginButton
-                    Layout.preferredWidth: ${DT_SPACING_SDDM_INPUT_WIDTH:-250}
-                    Layout.preferredHeight: ${DT_SPACING_SDDM_INPUT_HEIGHT:-40}
-                    text: "Login"
-                    contentItem: Text {
-                        text: loginButton.text
-                        color: config.getString("LoginScreen.LoginArea.LoginButton.content-color", "#ffffff")
-                        font.family: "${DTTypography_SDDM_Font:-Fira Sans}"
-                        font.pixelSize: ${DT_SPACING_SDDM_BUTTON_FONT_SIZE:-14}
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
+                // Controls Row (ComboBox & Login Button)
+                Row {
+                    spacing: 10
+                    anchors.horizontalCenter: parent.horizontalCenter
+
+                    Controls.ComboBox {
+                        id: sessionCombo
+                        width: 170
+                        height: 46
+                        model: sessionModel
+                        textRole: "name"
+                        currentIndex: model.lastIndex
+
+                        delegate: Controls.ItemDelegate {
+                            width: sessionCombo.width
+                            contentItem: Text {
+                                 text: typeof name !== 'undefined' ? name : (typeof modelData !== 'undefined' && modelData ? (modelData.name || modelData) : "")
+                                 color: config.input_text_color
+                                 font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
+                                 font.pixelSize: 13
+                                 elide: Text.ElideRight
+                                 verticalAlignment: Text.AlignVCenter
+                            }
+                            background: Rectangle {
+                                color: hovered ? config.input_bg_color : "transparent"
+                                opacity: 0.8
+                            }
+                        }
+
+                        contentItem: Text {
+                            leftPadding: 12
+                            rightPadding: sessionCombo.indicator ? sessionCombo.indicator.width + sessionCombo.spacing : 12
+                            text: sessionCombo.displayText
+                            color: config.input_text_color
+                            font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
+                            font.pixelSize: 13
+                            verticalAlignment: Text.AlignVCenter
+                            elide: Text.ElideRight
+                        }
+
+                        background: Rectangle {
+                            radius: 12
+                            color: config.input_bg_color
+                            opacity: config.input_bg_opacity
+                            border.color: config.input_border_color
+                            border.width: config.input_border_size
+                        }
                     }
-                    background: Rectangle {
-                        radius: ${DT_SPACING_SDDM_INPUT_RADIUS:-8}
-                        color: config.getString("LoginScreen.LoginArea.LoginButton.background-color", "#acc7ff")
-                        opacity: config.realValue("LoginScreen.LoginArea.LoginButton.background-opacity", 0.9)
+
+                    Controls.Button {
+                        id: loginButton
+                        width: 100
+                        height: 46
+                        text: "Login"
+                        
+                        contentItem: Text {
+                            text: loginButton.text
+                            color: config.button_text_color
+                            font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
+                            font.pixelSize: 14
+                            font.bold: true
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
+                        background: Rectangle {
+                            radius: 12
+                            color: config.button_bg_color
+                            opacity: loginButton.hovered ? 1.0 : config.button_bg_opacity
+                        }
+                        onClicked: sddm.login(username.text, password.text, sessionIndex)
                     }
-                    onClicked: sddm.login(username.text, password.text, sessionIndex)
                 }
             }
+        }
 
-            ComboBox {
-                id: sessionCombo
-                Layout.preferredWidth: ${DT_SPACING_SDDM_INPUT_WIDTH:-250}
-                model: sessionModel
-                textRole: "name"
-                currentIndex: model.lastIndex
+        // Bottom-Right Info & Clock Area
+        Column {
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+            anchors.rightMargin: 60
+            anchors.bottomMargin: 60
+            spacing: 8
+
+            Text {
+                id: welcomeLabel
+                text: username.text || "Welcome"
+                color: config.clock_color
+                font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
+                font.pixelSize: 22
+                font.bold: true
+                anchors.right: parent.right
+                opacity: 0.8
             }
+
+            Text {
+                id: timeLabel
+                text: Qt.formatTime(new Date(), "hh:mm")
+                color: config.clock_color
+                font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
+                font.pixelSize: ${DT_SPACING_SDDM_CLOCK_SIZE:-70}
+                font.bold: true
+                anchors.right: parent.right
+            }
+
+            Text {
+                id: dateLabel
+                text: Qt.formatDate(new Date(), Qt.DefaultLocaleLongDate)
+                color: config.clock_color
+                font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
+                font.pixelSize: 16
+                anchors.right: parent.right
+                opacity: 0.8
+            }
+        }
+    }
+
+    Timer {
+        interval: 1000
+        running: true
+        repeat: true
+        onTriggered: {
+            timeLabel.text = Qt.formatTime(new Date(), "hh:mm")
+            dateLabel.text = Qt.formatDate(new Date(), Qt.DefaultLocaleLongDate)
         }
     }
 
@@ -334,26 +411,24 @@ EOF
     sudo tee "$THEME_DIR/theme.conf" > /dev/null <<'EOF'
 [General]
 background-fill-mode = "fill"
-
-[LoginScreen]
-background = "default.jpg"
-use-background-color = true
-background-color = "#12131b"
-blur = 0
-
-[LockScreen]
-background = "default.jpg"
-use-background-color = true
-background-color = "#12131b"
-blur = 32
+background = "blurred.png"
+clock_color = "#ffffff"
+input_text_color = "#ffffff"
+input_placeholder_color = "#888888"
+input_bg_color = "#1f1f28"
+input_bg_opacity = 0.3
+input_border_color = "#43474f"
+input_border_size = 1
+button_text_color = "#ffffff"
+button_bg_color = "#acc7ff"
+button_bg_opacity = 0.9
 EOF
 
-    # Copy a placeholder wallpaper if backgrounds dir is empty
-    if [ -z "$(ls -A "$BACKGROUNDS_DIR" 2>/dev/null)" ]; then
-        local wp=$(get_wallpaper)
-        sudo cp "$wp" "$BACKGROUNDS_DIR/default.jpg"
-        info "Copied current wallpaper as default.jpg"
-    fi
+    # Setup symlinks from theme dir to writable cache dir
+    sudo rm -f "$THEME_DIR/theme.conf.user" "$BACKGROUNDS_DIR/blurred.png" "$BACKGROUNDS_DIR/avatar.png"
+    sudo ln -sf "$CACHE_DIR/theme.conf.user" "$THEME_DIR/theme.conf.user"
+    sudo ln -sf "$CACHE_DIR/blurred.png" "$BACKGROUNDS_DIR/blurred.png"
+    sudo ln -sf "$CACHE_DIR/avatar.png" "$BACKGROUNDS_DIR/avatar.png"
 
     info "Theme installed at $THEME_DIR"
     info "Activate with: sudo sed -i 's/^Current=.*/Current=shayar/' /etc/sddm.conf"
@@ -364,7 +439,7 @@ EOF
 sync_theme() {
     check_sddm
 
-    if [ ! -d "$THEME_DIR" ]; then
+    if [ ! -d "$THEME_DIR" ] || [ ! -d "$CACHE_DIR" ]; then
         error "Theme not installed. Run: shayar-sddm-sync --install"
         exit 1
     fi
@@ -375,22 +450,35 @@ sync_theme() {
         exit 1
     fi
 
+    local cache_folder="${HOME}/.cache/shayar/hyprland-dotfiles"
+    local blurred_wp="$cache_folder/blurred_wallpaper.png"
+    local square_wp="$cache_folder/square_wallpaper.png"
     local wallpaper=$(get_wallpaper)
-    local wallpaper_file=$(basename "$wallpaper")
 
-    info "Wallpaper: $wallpaper_file"
+    info "Syncing wallpaper and colors to SDDM cache..."
 
-    # Copy wallpaper to SDDM backgrounds dir
-    sudo mkdir -p "$BACKGROUNDS_DIR"
-    if [ ! -f "$BACKGROUNDS_DIR/$wallpaper_file" ]; then
-        sudo cp "$wallpaper" "$BACKGROUNDS_DIR/$wallpaper_file"
-        info "Copied wallpaper to $BACKGROUNDS_DIR/$wallpaper_file"
+    # Copy blurred wallpaper
+    if [ -f "$blurred_wp" ]; then
+        cp "$blurred_wp" "$CACHE_DIR/blurred.png"
+        info "Copied blurred wallpaper"
     else
-        info "Wallpaper already in SDDM dir"
+        cp "$wallpaper" "$CACHE_DIR/blurred.png"
+        warn "Blurred wallpaper cache not found, using raw wallpaper"
     fi
 
-    # Generate theme.conf.user with matugen colors
-    generate_theme_conf "$wallpaper_file"
+    # Copy avatar (square wallpaper)
+    if [ -f "$square_wp" ]; then
+        cp "$square_wp" "$CACHE_DIR/avatar.png"
+        info "Copied avatar"
+    else
+        cp "$wallpaper" "$CACHE_DIR/avatar.png"
+        warn "Square wallpaper cache not found, using raw wallpaper"
+    fi
+
+    chmod 644 "$CACHE_DIR/blurred.png" "$CACHE_DIR/avatar.png"
+
+    # Generate theme.conf.user with matugen colors using static filename
+    generate_theme_conf "blurred.png"
 
     info "SDDM sync complete!"
     info "Changes take effect on next login screen appearance."

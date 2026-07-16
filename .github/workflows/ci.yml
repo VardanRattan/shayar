@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: |
           pacman -Syu --noconfirm
-          pacman -S --noconfirm jq lua shellcheck luarocks gcc make sudo
+          pacman -S --noconfirm jq lua shellcheck luarocks gcc make sudo python
           luarocks install luacheck
 
       - name: Run smoke tests

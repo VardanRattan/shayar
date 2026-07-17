@@ -160,11 +160,26 @@ EOF
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls as Controls
-import SddmComponents
+import SddmComponents 2.0
 
 Item {
     id: root
     property int sessionIndex: sessionCombo.currentIndex
+    opacity: 0
+
+    Component.onCompleted: {
+        fadeIn.start()
+    }
+
+    NumberAnimation {
+        id: fadeIn
+        target: root
+        property: "opacity"
+        from: 0
+        to: 1
+        duration: 800
+        easing.type: Easing.OutQuad
+    }
 
     Image {
         anchors.fill: parent
@@ -176,45 +191,22 @@ Item {
         anchors.fill: parent
         color: "transparent"
 
-        // Center Login Card
+        // Center Login Controls (Clean, floating, no border/box panel container to match hyprlock)
         Column {
             anchors.centerIn: parent
-            spacing: 24
+            spacing: ${DT_SPACING_SDDM_LAYOUT_SPACING:-24}
 
-            // Avatar Container
-            Rectangle {
-                id: avatarContainer
-                width: 120
-                height: 120
-                radius: 30
-                color: "transparent"
-                border.color: config.button_bg_color
-                border.width: 2
-                anchors.horizontalCenter: parent.horizontalCenter
-                clip: true
 
-                Image {
-                    id: avatarImage
-                    anchors.fill: parent
-                    source: Qt.resolvedUrl("backgrounds/avatar.png")
-                    fillMode: Image.PreserveAspectCrop
-                    onStatusChanged: {
-                        if (status === Image.Error) {
-                            source = Qt.resolvedUrl("backgrounds/blurred.png")
-                        }
-                    }
-                }
-            }
 
-            // Input Fields
+            // Input Fields Column
             Column {
                 spacing: 12
                 anchors.horizontalCenter: parent.horizontalCenter
 
                 Controls.TextField {
                     id: username
-                    width: 280
-                    height: 46
+                    width: ${DT_SPACING_SDDM_INPUT_WIDTH:-300}
+                    height: ${DT_SPACING_SDDM_INPUT_HEIGHT:-48}
                     placeholderText: "Username"
                     text: userModel.lastUser || ""
                     color: config.input_text_color
@@ -222,21 +214,41 @@ Item {
                     font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
                     font.pixelSize: 14
                     selectByMouse: true
+                    scale: activeFocus ? 1.015 : 1.0
                     
-                    background: Rectangle {
-                        radius: 12
-                        color: config.input_bg_color
-                        opacity: username.activeFocus ? 0.4 : config.input_bg_opacity
-                        border.color: username.activeFocus ? config.button_bg_color : config.input_border_color
-                        border.width: username.activeFocus ? 2 : config.input_border_size
+                    Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+
+                    background: Item {
+                        id: userBgWrapper
+                        Rectangle {
+                            anchors.fill: parent
+                            anchors.margins: -4
+                            radius: userBgRect.radius + 2
+                            color: "#000000"
+                            opacity: userBgWrapper.parent.activeFocus ? 0.22 : 0.12
+                            Behavior on opacity { NumberAnimation { duration: 150 } }
+                        }
+                        Rectangle {
+                            id: userBgRect
+                            anchors.fill: parent
+                            radius: ${DT_SPACING_SDDM_INPUT_RADIUS:-14}
+                            color: config.input_bg_color
+                            opacity: userBgWrapper.parent.activeFocus ? 0.45 : config.input_bg_opacity
+                            border.color: userBgWrapper.parent.activeFocus ? config.button_bg_color : config.input_border_color
+                            border.width: userBgWrapper.parent.activeFocus ? 2 : config.input_border_size
+                            
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                            Behavior on border.color { ColorAnimation { duration: 150 } }
+                            Behavior on opacity { NumberAnimation { duration: 150 } }
+                        }
                     }
                     onAccepted: password.forceActiveFocus()
                 }
 
                 Controls.TextField {
                     id: password
-                    width: 280
-                    height: 46
+                    width: ${DT_SPACING_SDDM_INPUT_WIDTH:-300}
+                    height: ${DT_SPACING_SDDM_INPUT_HEIGHT:-48}
                     placeholderText: "Password"
                     echoMode: TextInput.Password
                     color: config.input_text_color
@@ -244,26 +256,46 @@ Item {
                     font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
                     font.pixelSize: 14
                     selectByMouse: true
+                    scale: activeFocus ? 1.015 : 1.0
                     
-                    background: Rectangle {
-                        radius: 12
-                        color: config.input_bg_color
-                        opacity: password.activeFocus ? 0.4 : config.input_bg_opacity
-                        border.color: password.activeFocus ? config.button_bg_color : config.input_border_color
-                        border.width: password.activeFocus ? 2 : config.input_border_size
+                    Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+
+                    background: Item {
+                        id: pwBgWrapper
+                        Rectangle {
+                            anchors.fill: parent
+                            anchors.margins: -4
+                            radius: pwBgRect.radius + 2
+                            color: "#000000"
+                            opacity: pwBgWrapper.parent.activeFocus ? 0.22 : 0.12
+                            Behavior on opacity { NumberAnimation { duration: 150 } }
+                        }
+                        Rectangle {
+                            id: pwBgRect
+                            anchors.fill: parent
+                            radius: ${DT_SPACING_SDDM_INPUT_RADIUS:-14}
+                            color: config.input_bg_color
+                            opacity: pwBgWrapper.parent.activeFocus ? 0.45 : config.input_bg_opacity
+                            border.color: pwBgWrapper.parent.activeFocus ? config.button_bg_color : config.input_border_color
+                            border.width: pwBgWrapper.parent.activeFocus ? 2 : config.input_border_size
+                            
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                            Behavior on border.color { ColorAnimation { duration: 150 } }
+                            Behavior on opacity { NumberAnimation { duration: 150 } }
+                        }
                     }
-                    onAccepted: loginButton.clicked()
+                    onAccepted: sddm.login(username.text, password.text, sessionIndex)
                 }
 
-                // Controls Row (ComboBox & Login Button)
+                // Controls Row (ComboBox & Login Button) aligned with input fields width
                 Row {
                     spacing: 10
                     anchors.horizontalCenter: parent.horizontalCenter
 
                     Controls.ComboBox {
                         id: sessionCombo
-                        width: 170
-                        height: 46
+                        width: 180
+                        height: ${DT_SPACING_SDDM_INPUT_HEIGHT:-48}
                         model: sessionModel
                         textRole: "name"
                         currentIndex: model.lastIndex
@@ -295,20 +327,58 @@ Item {
                             elide: Text.ElideRight
                         }
 
-                        background: Rectangle {
-                            radius: 12
-                            color: config.input_bg_color
-                            opacity: config.input_bg_opacity
-                            border.color: config.input_border_color
-                            border.width: config.input_border_size
+                        background: Item {
+                            id: cbBgWrapper
+                            Rectangle {
+                                anchors.fill: parent
+                                anchors.margins: -4
+                                radius: cbBgRect.radius + 2
+                                color: "#000000"
+                                opacity: 0.12
+                            }
+                            Rectangle {
+                                id: cbBgRect
+                                anchors.fill: parent
+                                radius: ${DT_SPACING_SDDM_INPUT_RADIUS:-14}
+                                color: config.input_bg_color
+                                opacity: config.input_bg_opacity
+                                border.color: config.input_border_color
+                                border.width: config.input_border_size
+                            }
+                        }
+
+                        popup: Controls.Popup {
+                            y: sessionCombo.height + 6
+                            width: sessionCombo.width
+                            implicitHeight: contentItem.implicitHeight
+                            padding: 1
+                            
+                            contentItem: ListView {
+                                clip: true
+                                implicitHeight: contentHeight
+                                model: sessionCombo.popup.visible ? sessionCombo.delegateModel : null
+                                currentIndex: sessionCombo.highlightedIndex
+                                Controls.ScrollIndicator.vertical: Controls.ScrollIndicator { }
+                            }
+                            
+                            background: Rectangle {
+                                radius: ${DT_SPACING_SDDM_INPUT_RADIUS:-14}
+                                color: config.input_bg_color
+                                border.color: config.input_border_color
+                                border.width: config.input_border_size
+                                opacity: 0.95
+                            }
                         }
                     }
 
                     Controls.Button {
                         id: loginButton
-                        width: 100
-                        height: 46
+                        width: 110
+                        height: ${DT_SPACING_SDDM_INPUT_HEIGHT:-48}
                         text: "Login"
+                        scale: pressed ? 0.96 : (hovered ? 1.03 : 1.0)
+                        
+                        Behavior on scale { NumberAnimation { duration: 100 } }
                         
                         contentItem: Text {
                             text: loginButton.text
@@ -320,10 +390,24 @@ Item {
                             verticalAlignment: Text.AlignVCenter
                         }
 
-                        background: Rectangle {
-                            radius: 12
-                            color: config.button_bg_color
-                            opacity: loginButton.hovered ? 1.0 : config.button_bg_opacity
+                        background: Item {
+                            id: btnBgWrapper
+                            Rectangle {
+                                anchors.fill: parent
+                                anchors.margins: -4
+                                radius: btnBgRect.radius + 2
+                                color: "#000000"
+                                opacity: btnBgWrapper.parent.hovered ? 0.25 : 0.15
+                                Behavior on opacity { NumberAnimation { duration: 150 } }
+                            }
+                            Rectangle {
+                                id: btnBgRect
+                                anchors.fill: parent
+                                radius: ${DT_SPACING_SDDM_INPUT_RADIUS:-14}
+                                color: config.button_bg_color
+                                opacity: btnBgWrapper.parent.hovered ? 1.0 : config.button_bg_opacity
+                                Behavior on opacity { NumberAnimation { duration: 150 } }
+                            }
                         }
                         onClicked: sddm.login(username.text, password.text, sessionIndex)
                     }
@@ -331,23 +415,108 @@ Item {
             }
         }
 
-        // Bottom-Right Info & Clock Area
-        Column {
-            anchors.right: parent.right
+        // Bottom-Left Power & Session Controls (Minimalist & Clean)
+        Row {
+            id: powerArea
+            anchors.left: parent.left
             anchors.bottom: parent.bottom
-            anchors.rightMargin: 60
+            anchors.leftMargin: 60
             anchors.bottomMargin: 60
-            spacing: 8
+            spacing: 24
+
+            Item {
+                width: sleepText.implicitWidth
+                height: 30
+                visible: true
+                
+                Text {
+                    id: sleepText
+                    anchors.centerIn: parent
+                    text: "Sleep"
+                    color: sleepMouse.containsMouse ? config.button_bg_color : config.clock_color
+                    font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
+                    font.pixelSize: 15
+                    font.bold: true
+                    opacity: sleepMouse.containsMouse ? 1.0 : 0.7
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    Behavior on opacity { NumberAnimation { duration: 150 } }
+                }
+                MouseArea {
+                    id: sleepMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onClicked: sddm.suspend()
+                }
+            }
+
+            Item {
+                width: restartText.implicitWidth
+                height: 30
+                visible: true
+                
+                Text {
+                    id: restartText
+                    anchors.centerIn: parent
+                    text: "Restart"
+                    color: restartMouse.containsMouse ? config.button_bg_color : config.clock_color
+                    font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
+                    font.pixelSize: 15
+                    font.bold: true
+                    opacity: restartMouse.containsMouse ? 1.0 : 0.7
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    Behavior on opacity { NumberAnimation { duration: 150 } }
+                }
+                MouseArea {
+                    id: restartMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onClicked: sddm.reboot()
+                }
+            }
+
+            Item {
+                width: shutdownText.implicitWidth
+                height: 30
+                visible: true
+                
+                Text {
+                    id: shutdownText
+                    anchors.centerIn: parent
+                    text: "Shut Down"
+                    color: shutdownMouse.containsMouse ? config.button_bg_color : config.clock_color
+                    font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
+                    font.pixelSize: 15
+                    font.bold: true
+                    opacity: shutdownMouse.containsMouse ? 1.0 : 0.7
+                    Behavior on color { ColorAnimation { duration: 150 } }
+                    Behavior on opacity { NumberAnimation { duration: 150 } }
+                }
+                MouseArea {
+                    id: shutdownMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onClicked: sddm.powerOff()
+                }
+            }
+        }
+
+        // Top-Left Info & Clock Area
+        Column {
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.leftMargin: 60
+            anchors.topMargin: 60
+            spacing: 4
 
             Text {
                 id: welcomeLabel
-                text: username.text || "Welcome"
+                text: username.text ? username.text : (userModel.lastUser || "Welcome")
                 color: config.clock_color
                 font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
-                font.pixelSize: 22
+                font.pixelSize: 20
                 font.bold: true
-                anchors.right: parent.right
-                opacity: 0.8
+                anchors.left: parent.left
+                opacity: 0.85
             }
 
             Text {
@@ -355,9 +524,9 @@ Item {
                 text: Qt.formatTime(new Date(), "hh:mm")
                 color: config.clock_color
                 font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
-                font.pixelSize: ${DT_SPACING_SDDM_CLOCK_SIZE:-70}
+                font.pixelSize: ${DT_SPACING_SDDM_CLOCK_SIZE:-72}
                 font.bold: true
-                anchors.right: parent.right
+                anchors.left: parent.left
             }
 
             Text {
@@ -365,9 +534,9 @@ Item {
                 text: Qt.formatDate(new Date(), Qt.DefaultLocaleLongDate)
                 color: config.clock_color
                 font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
-                font.pixelSize: 16
-                anchors.right: parent.right
-                opacity: 0.8
+                font.pixelSize: 15
+                anchors.left: parent.left
+                opacity: 0.75
             }
         }
     }
@@ -403,6 +572,7 @@ License=MIT
 Version=1.0.0
 Theme-Id=shayar
 Theme-API=2.0
+QtVersion=6
 MainScript=Main.qml
 ConfigFile=theme.conf.user
 EOF

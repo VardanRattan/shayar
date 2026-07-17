@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.5.0] - 2026-07-17
+
+### Added
+- **CI Workflow**: Added `python` to the GitHub Actions test runner environment dependencies.
+- **Python Syntax Verification**: Added automated Python syntax testing to the local test suite.
+
+### Changed
+- **SDDM Layout Redesign**: Completely removed the circular avatar image/container to keep the login fields centered on the screen.
+- **Clock Positioning**: Moved the clock and date area to the top-left (previously bottom-right) and left-aligned the texts.
+- **Design Tokens Scale**: Enlarged the SDDM layout dimensions:
+  - Clock text size increased from `48` to `72`.
+  - Input fields scaled from `250x40` to `300x48`.
+  - Corner radius rounded from `8` to `14`.
+  - Layout and inner spacing increased to `24` and `12` respectively.
+- **Test Suite Logs**: Refactored `test.sh` to output full failure logs rather than suppressing output on errors.
+- **Syntax Check Scope**: Broadened syntax checking in `test.sh` to cover all executable files in `bin/` and `scripts/` instead of just those prefixed with `shayar-*`.
+
+### Fixed
+- **SDDM QML Errors**: Resolved `ScrollIndicator is not a type` by prefixing the type and attached property with the `Controls` namespace.
+- **SDDM Imports**: Fixed library loading errors by using Qt 6-compatible versionless imports for standard libraries while retaining `SddmComponents 2.0` versioning.
+- **Power Buttons Visibility**: Set Sleep, Restart, and Shut Down buttons to `visible: true` to prevent them from being hidden by logind/D-Bus initialization delays or when testing via `--test-mode`.
+
 ## [0.4.0] - 2026-07-13
 
 ### Refactored

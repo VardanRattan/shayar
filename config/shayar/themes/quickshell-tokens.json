@@ -58,5 +58,8 @@
     "bar_radius": 6,
     "bar_min_height": 6,
     "welcome_panel_width": 420,
-    "welcome_panel_radius": 24
+    "welcome_panel_radius": 24,
+    "ui_family": "Geist",
+    "mono_family": "GeistMono Nerd Font",
+    "icon_font_family": "Symbols Nerd Font Mono"
 }

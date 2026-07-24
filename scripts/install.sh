@@ -60,7 +60,7 @@ phase1_packages() {
             )
             install_pkg "$pm" "${arch_pkgs[@]}"
             # AUR / arch-specific
-            install_pkg "$pm" tty-clock ttf-rubik bibata-cursor-theme awww matugen quickshell-git kora-icon-theme tela-circle-dracula-icon-theme bluetuith-bin 2>/dev/null || \
+            install_pkg "$pm" tty-clock ttf-rubik ttf-geist ttf-geist-mono-nerd bibata-cursor-theme awww matugen quickshell-git kora-icon-theme tela-circle-dracula-icon-theme bluetuith-bin 2>/dev/null || \
                 warn "Some AUR packages failed. Install manually."
             ;;
         dnf)
@@ -86,6 +86,31 @@ phase1_packages() {
     # Create screenshots directory for Swappy out-of-the-box compatibility
     mkdir -p "$HOME/Pictures/Screenshots"
     info "Created screenshot directory: ~/Pictures/Screenshots"
+}
+
+# ---- Geist Font Downloader ----
+install_geist_fonts() {
+    info "Checking Geist and Geist Mono Nerd Font installation..."
+    local font_dir="$HOME/.local/share/fonts"
+    mkdir -p "$font_dir/Geist" "$font_dir/GeistMonoNerdFont"
+
+    if ! fc-list : family | grep -iq "geist"; then
+        info "Downloading Geist & Geist Mono Nerd Font family..."
+        local tmp_dir
+        tmp_dir="$(mktemp -d)"
+        if curl -fsSL "https://github.com/vercel/geist-font/releases/download/v1.7.2/geist-font-v1.7.2.zip" -o "$tmp_dir/geist.zip"; then
+            unzip -q -o "$tmp_dir/geist.zip" -d "$tmp_dir/geist-extract"
+            find "$tmp_dir/geist-extract" -type f \( -name "*.ttf" -o -name "*.otf" \) -exec cp {} "$font_dir/Geist/" \; 2>/dev/null || true
+        fi
+        if curl -fsSL "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/GeistMono.tar.xz" -o "$tmp_dir/geistmono.tar.xz"; then
+            tar -xf "$tmp_dir/geistmono.tar.xz" -C "$font_dir/GeistMonoNerdFont" 2>/dev/null || true
+        fi
+        rm -rf "$tmp_dir"
+        fc-cache -f "$font_dir" &>/dev/null || true
+        info "Geist fonts installed successfully to $font_dir"
+    else
+        info "Geist fonts already installed on system"
+    fi
 }
 
 # ---- phase 2: oh-my-zsh & plugins ----
@@ -189,6 +214,7 @@ main() {
     info "Detected package manager: $pm"
 
     phase1_packages "$pm"
+    install_geist_fonts
     phase2_shell
     phase3_link
     phase4_generate

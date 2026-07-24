@@ -12,22 +12,21 @@
 
 /* ---- Configuration ---- */
 configuration {
-    modi:                       "drun,filebrowser,window,run";
+    modi:                       "drun,filebrowser,run";
 
     show-icons:                 true;
 
-    display-drun:               " ";
-    display-run:                " ";
-    display-filebrowser:        " ";
-    display-window:             " ";
+    display-drun:               "󰀻 Apps";
+    display-filebrowser:        "󰉋 Files";
+    display-run:                "󰞷 Run";
     drun-display-format:        "{name}";
     hover-select:               false;
-    me-select-entry:            "";
-    me-accept-entry:            "MousePrimary";
     window-format:              "{w} · {c} · {t}";
     click-to-exit:              true;
     close-on-delete:            true;
-    kb-cancel:                  "Escape,MousePrimary";    
+    kb-cancel:                  "Escape";
+    kb-mode-next:               "Shift+Right,Control+Tab";
+    kb-mode-previous:           "Shift+Left,Control+Shift+Tab";
 }
 
 /* ---- Load design tokens ---- */
@@ -63,30 +62,34 @@ mainbox {
 inputbar {
     enabled:                     true;
     margin:                      @dt-spacing-rofi-padding;
-    padding:                     15px;
+    padding:                     12px 18px;
+    spacing:                     12px;
     children:                    [ "textbox-prompt-colon", "entry", "mode-switcher" ];
     border-radius:               @dt-spacing-rofi-list-radius;
     background-color:            @dt-colors-surface-container-lowest;
     border:                      1px;
-    border-color:                @dt-colors-surface-container-highest;
+    border-color:                @dt-colors-outline-variant;
 }
 
 textbox-prompt-colon {
     enabled:                     true;
     expand:                      false;
-    str:                         "  ";
-    padding:                     15px 15px 0 0;
+    str:                         "";
+    padding:                     0px 4px 0px 2px;
+    vertical-align:              0.5;
+    horizontal-align:            0.5;
     text-color:                  @dt-colors-primary;
     background-color:            transparent;
 }
 
 entry {
     enabled:                     true;
-    spacing:                     1em;
-    padding:                     15px 0 0 0;
+    spacing:                     0em;
+    padding:                     0px;
+    vertical-align:              0.5;
     text-color:                  @dt-colors-on-surface;
     cursor:                      text;
-    placeholder:                 "Launch Apps & Find Files...";
+    placeholder:                 "Search applications & files...";
     background-color:            transparent;
     placeholder-color:           @dt-colors-on-surface-variant;
 }
@@ -95,22 +98,24 @@ entry {
 mode-switcher {
     orientation:                 horizontal;
     enabled:                     true;
-    spacing:                     10px;
+    spacing:                     8px;
     background-color:            transparent;
 }
 
 button {
-    padding:                     10px 15px;
+    padding:                     6px 14px;
     border-radius:               @dt-spacing-rofi-element-radius;
     border:                      0;    
     cursor:                      pointer;
-    background-color:            transparent;
+    background-color:            @dt-colors-surface-container-high;
     text-color:                  @dt-colors-on-surface-variant;
+    vertical-align:              0.5;
+    horizontal-align:            0.5;
 }
 
 button selected {
-    background-color:            @dt-colors-primary-container;
-    text-color:                  @dt-colors-on-primary-container;
+    background-color:            @dt-colors-primary;
+    text-color:                  @dt-colors-on-primary;
 }
 
 // Lists //
@@ -124,7 +129,7 @@ listbox {
 
 listview {
     padding:                     0;
-    spacing:                     15px;
+    spacing:                     12px;
     enabled:                     true;
     columns:                     4;
     lines:                       4;
@@ -151,8 +156,8 @@ scrollbar {
 element {
     enabled:                     true;
     orientation:                 vertical;
-    spacing:                     10px;
-    padding:                     15px;
+    spacing:                     8px;
+    padding:                     14px;
     cursor:                      pointer;
     background-color:            transparent;
     text-color:                  @dt-colors-on-surface;
@@ -177,9 +182,11 @@ element alternate.normal {
 }
 
 element-icon {
-    size:                        4em;
+    size:                        3.5em;
     cursor:                      inherit;
     text-color:                  inherit;
+    horizontal-align:            0.5;
+    vertical-align:              0.5;
 }
 
 element-text {

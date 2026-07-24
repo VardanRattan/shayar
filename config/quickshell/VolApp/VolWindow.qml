@@ -128,7 +128,7 @@ PanelWindow {
                     text: (root.volume > 0.5 ? "\uF028" : root.volume > 0 ? "\uF027" : "\uF026")
                     color: root.isMuted ? root.colors.on_surface_variant : root.colors.primary
                     font.pixelSize: root.tokens.icon_size
-                    font.family: "Symbols Nerd Font Mono"
+                    font.family: root.ready && root.tokens.icon_font_family ? root.tokens.icon_font_family : "Symbols Nerd Font Mono"
                 }
                 Rectangle {
                     width: Math.sqrt(parent.width*parent.width + parent.height*parent.height) * 0.8

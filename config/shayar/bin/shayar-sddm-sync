@@ -114,7 +114,7 @@ EOF
 install_theme() {
     check_sddm
 
-    if [ -d "$THEME_DIR" ]; then
+    if [ -d "$THEME_DIR" ] && [ "${1:-}" != "-y" ] && [ "${1:-}" != "--force" ]; then
         info "Theme already exists at $THEME_DIR"
         read -p "Reinstall? [y/N] " -n 1 -r
         echo
@@ -169,6 +169,7 @@ Item {
 
     Component.onCompleted: {
         fadeIn.start()
+        focusTimer.start()
     }
 
     NumberAnimation {
@@ -211,7 +212,7 @@ Item {
                     text: userModel.lastUser || ""
                     color: config.input_text_color
                     placeholderTextColor: config.input_placeholder_color
-                    font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
+                    font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Geist}"
                     font.pixelSize: 14
                     selectByMouse: true
                     scale: activeFocus ? 1.015 : 1.0
@@ -247,13 +248,14 @@ Item {
 
                 Controls.TextField {
                     id: password
+                    focus: username.text !== ""
                     width: ${DT_SPACING_SDDM_INPUT_WIDTH:-300}
                     height: ${DT_SPACING_SDDM_INPUT_HEIGHT:-48}
                     placeholderText: "Password"
                     echoMode: TextInput.Password
                     color: config.input_text_color
                     placeholderTextColor: config.input_placeholder_color
-                    font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
+                    font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Geist}"
                     font.pixelSize: 14
                     selectByMouse: true
                     scale: activeFocus ? 1.015 : 1.0
@@ -305,7 +307,7 @@ Item {
                             contentItem: Text {
                                  text: typeof name !== 'undefined' ? name : (typeof modelData !== 'undefined' && modelData ? (modelData.name || modelData) : "")
                                  color: config.input_text_color
-                                 font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
+                                 font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Geist}"
                                  font.pixelSize: 13
                                  elide: Text.ElideRight
                                  verticalAlignment: Text.AlignVCenter
@@ -321,7 +323,7 @@ Item {
                             rightPadding: sessionCombo.indicator ? sessionCombo.indicator.width + sessionCombo.spacing : 12
                             text: sessionCombo.displayText
                             color: config.input_text_color
-                            font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
+                            font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Geist}"
                             font.pixelSize: 13
                             verticalAlignment: Text.AlignVCenter
                             elide: Text.ElideRight
@@ -383,7 +385,7 @@ Item {
                         contentItem: Text {
                             text: loginButton.text
                             color: config.button_text_color
-                            font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
+                            font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Geist}"
                             font.pixelSize: 14
                             font.bold: true
                             horizontalAlignment: Text.AlignHCenter
@@ -434,7 +436,7 @@ Item {
                     anchors.centerIn: parent
                     text: "Sleep"
                     color: sleepMouse.containsMouse ? config.button_bg_color : config.clock_color
-                    font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
+                    font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Geist}"
                     font.pixelSize: 15
                     font.bold: true
                     opacity: sleepMouse.containsMouse ? 1.0 : 0.7
@@ -459,7 +461,7 @@ Item {
                     anchors.centerIn: parent
                     text: "Restart"
                     color: restartMouse.containsMouse ? config.button_bg_color : config.clock_color
-                    font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
+                    font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Geist}"
                     font.pixelSize: 15
                     font.bold: true
                     opacity: restartMouse.containsMouse ? 1.0 : 0.7
@@ -484,7 +486,7 @@ Item {
                     anchors.centerIn: parent
                     text: "Shut Down"
                     color: shutdownMouse.containsMouse ? config.button_bg_color : config.clock_color
-                    font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
+                    font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Geist}"
                     font.pixelSize: 15
                     font.bold: true
                     opacity: shutdownMouse.containsMouse ? 1.0 : 0.7
@@ -512,7 +514,7 @@ Item {
                 id: welcomeLabel
                 text: username.text ? username.text : (userModel.lastUser || "Welcome")
                 color: config.clock_color
-                font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
+                font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Geist}"
                 font.pixelSize: 20
                 font.bold: true
                 anchors.left: parent.left
@@ -523,7 +525,7 @@ Item {
                 id: timeLabel
                 text: Qt.formatTime(new Date(), "hh:mm")
                 color: config.clock_color
-                font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
+                font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Geist}"
                 font.pixelSize: ${DT_SPACING_SDDM_CLOCK_SIZE:-72}
                 font.bold: true
                 anchors.left: parent.left
@@ -533,7 +535,7 @@ Item {
                 id: dateLabel
                 text: Qt.formatDate(new Date(), Qt.DefaultLocaleLongDate)
                 color: config.clock_color
-                font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Fira Sans}"
+                font.family: "${DT_TYPOGRAPHY_SDDM_FONT:-Geist}"
                 font.pixelSize: 15
                 anchors.left: parent.left
                 opacity: 0.75
@@ -548,6 +550,20 @@ Item {
         onTriggered: {
             timeLabel.text = Qt.formatTime(new Date(), "hh:mm")
             dateLabel.text = Qt.formatDate(new Date(), Qt.DefaultLocaleLongDate)
+        }
+    }
+
+    Timer {
+        id: focusTimer
+        interval: 100
+        running: false
+        repeat: false
+        onTriggered: {
+            if (username.text !== "") {
+                password.forceActiveFocus()
+            } else {
+                username.forceActiveFocus()
+            }
         }
     }
 
@@ -693,7 +709,7 @@ show_status() {
 
 # --- Parse args ---
 case "${1:-}" in
-    --install|-i) install_theme ;;
+    --install|-i) install_theme "${2:-}" ;;
     --status|-s)  show_status ;;
     --help|-h)    usage ;;
     "")           sync_theme ;;

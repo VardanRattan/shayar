@@ -310,8 +310,8 @@ Single glass theme in `themes/shayar/`.
 
 ### `config.rasi`
 256 lines. Main launcher config:
-- Modes: drun, filebrowser, window, run
-- Font: Fira Sans 11
+- Modes: drun, filebrowser, run
+- Font: Geist 11
 - Icon theme: Tela-circle-dracula
 - Window: 56em x 35em, rounded (24px), transparent with wallpaper background
 - Two-panel layout: left (imagebox with inputbar + mode-switcher), right (listview)
@@ -398,7 +398,7 @@ First-boot welcome screen. Solid background, centered on screen. Displays keybin
 ## Terminal (`config/kitty/`)
 
 ### `kitty.conf`
-- Font: JetBrainsMono Nerd Font, 12pt
+- Font: GeistMono Nerd Font, 12pt
 - Window: 950x500, no decorations, padding 10, transparency 0.7, dynamic opacity
 - Cursor: blink interval 0.5s, stop after 1s
 - Scrollback: 2000 lines
@@ -488,7 +488,7 @@ ZSH uses oh-my-zsh with plugins (git, sudo, web-search, archlinux, zsh-autosugge
 ## GTK Theming (`config/gtk-3.0/`, `config/gtk-4.0/`)
 
 ### GTK 3.0:
-- `settings.ini` -- Theme: Adwaita, Icons: Tela-circle-dracula, Font: Fira Sans Semi-Bold 11, Cursor: Bibata-Modern-Ice 24, Dark mode: enabled, Antialiasing: hintslight rgb
+- `settings.ini` -- Theme: Adwaita, Icons: Tela-circle-dracula, Font: Geist Semi-Bold 11, Cursor: Bibata-Modern-Ice 24, Dark mode: enabled, Antialiasing: hintslight rgb
 - `gtk.css` -- Custom CSS overrides
 - `colors.css` -- Matugen-generated GTK colors
 

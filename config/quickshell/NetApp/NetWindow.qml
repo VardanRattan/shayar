@@ -126,7 +126,7 @@ PanelWindow {
                     text: "\uF1EB"
                     color: root.colors.primary
                     font.pixelSize: root.tokens.icon_size + 4
-                    font.family: "Symbols Nerd Font Mono"
+                    font.family: root.ready && root.tokens.icon_font_family ? root.tokens.icon_font_family : "Symbols Nerd Font Mono"
                 }
                 Text {
                     text: "Wi-Fi"
@@ -147,7 +147,7 @@ PanelWindow {
                         text: root.wifiEnabled ? "\uF1EB" : "\uF057"
                         color: root.wifiEnabled ? root.colors.primary : root.colors.on_surface_variant
                         font.pixelSize: root.tokens.list_icon_size
-                        font.family: "Symbols Nerd Font Mono"
+                        font.family: root.ready && root.tokens.icon_font_family ? root.tokens.icon_font_family : "Symbols Nerd Font Mono"
                     }
                     MouseArea {
                         id: mouseAreaToggle
@@ -178,7 +178,7 @@ PanelWindow {
                         text: "\uF021"
                         color: root.colors.on_surface
                         font.pixelSize: root.tokens.list_icon_size
-                        font.family: "Symbols Nerd Font Mono"
+                        font.family: root.ready && root.tokens.icon_font_family ? root.tokens.icon_font_family : "Symbols Nerd Font Mono"
                         RotationAnimation on rotation {
                             loops: Animation.Infinite
                             from: 0; to: 360
@@ -239,7 +239,7 @@ PanelWindow {
                                 text: "\uF1EB"
                                 color: model.inUse ? root.colors.on_primary : (model.signal > 70 ? root.colors.primary : (model.signal > 40 ? root.colors.tertiary : root.colors.error))
                                 font.pixelSize: root.tokens.list_icon_size
-                                font.family: "Symbols Nerd Font Mono"
+                                font.family: root.ready && root.tokens.icon_font_family ? root.tokens.icon_font_family : "Symbols Nerd Font Mono"
                             }
                             Rectangle {
                                 width: 12; height: 12; radius: 6
@@ -252,7 +252,7 @@ PanelWindow {
                                     text: "\uF023"
                                     color: root.colors.primary
                                     font.pixelSize: 8
-                                    font.family: "Symbols Nerd Font Mono"
+                                    font.family: root.ready && root.tokens.icon_font_family ? root.tokens.icon_font_family : "Symbols Nerd Font Mono"
                                 }
                             }
                         }

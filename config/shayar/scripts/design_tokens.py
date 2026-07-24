@@ -133,7 +133,11 @@ def generate_shayar_json(tokens, out_dir):
 
 def generate_quickshell_tokens(tokens, out_dir):
     out_path = os.path.join(out_dir, "quickshell-tokens.json")
-    qs = tokens.get("quickshell", {})
+    qs = tokens.get("quickshell", {}).copy()
+    typo = tokens.get("typography", {})
+    qs["ui_family"] = typo.get("ui_family", "Geist")
+    qs["mono_family"] = typo.get("mono_family", "GeistMono Nerd Font")
+    qs["icon_font_family"] = typo.get("icon_font_family", "Symbols Nerd Font Mono")
     with open(out_path, "w") as f:
         json.dump(qs, f, indent=4)
     print(f"Generated: {out_path}")
@@ -168,11 +172,22 @@ def get_sorted_replacements(tokens):
     return sorted_reps
 
 def apply_replacements(content, sorted_reps):
+    color_reps = []
+    dt_reps = []
     for k, v in sorted_reps:
         if k.startswith("DT_COLORS_"):
             color_name = k[len("DT_COLORS_"):].lower().replace("_", "-")
-            content = content.replace(f"@{color_name}", v)
-        content = content.replace(f"@{k}@", v)
+            color_reps.append((f"@{color_name}", v))
+        dt_reps.append((f"@{k}@", v))
+    
+    # Sort color_reps by key length descending so @tertiary-container is replaced before @tertiary
+    color_reps.sort(key=lambda x: len(x[0]), reverse=True)
+    
+    for token, val in color_reps:
+        content = content.replace(token, val)
+    for token, val in dt_reps:
+        content = content.replace(token, val)
+        
     return content
 
 def generate_fastfetch(tokens, out_dir):
@@ -198,12 +213,15 @@ def generate_fastfetch(tokens, out_dir):
 def generate_waybar_css(tokens, out_dir):
     home = os.environ.get("HOME", "")
     config_home = os.environ.get("XDG_CONFIG_HOME", os.path.join(home, ".config"))
-    src = os.path.join(config_home, "shayar", "themes", "waybar-style.css")
-    dst = os.path.join(out_dir, "waybar-style.css")
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    src = os.path.join(script_dir, "..", "themes", "waybar-style.css")
+    if not os.path.exists(src):
+        src = os.path.join(config_home, "shayar", "themes", "waybar-style.css")
     
+    dst = os.path.join(out_dir, "waybar-style.css")
     reps = get_sorted_replacements(tokens)
     
-    if src != dst and os.path.exists(src):
+    if os.path.exists(src):
         with open(src, "r") as f:
             content = f.read()
         resolved = apply_replacements(content, reps)

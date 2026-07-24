@@ -17,7 +17,7 @@
 
 /* Reset & Global Font Rules */
 * {
-    font-family: @DT_TYPOGRAPHY_WAYBAR_FONT_FAMILY@;
+    font-family: 'Geist', 'Geist Mono', 'Font Awesome 6 Free', 'Font Awesome 6 Brands', sans-serif;
     border: none;
     border-radius: 0px;
     font-weight: 500;
@@ -35,30 +35,30 @@ window#waybar {
  */
 #group-center-pill,
 #group-right-pill {
-    background-color: alpha(@surface, @DT_OPACITY_WAYBAR_PILL_BACKGROUND@);
-    border: 1px solid alpha(@on_surface, @DT_OPACITY_WAYBAR_BORDER_ALPHA@);
+    background-color: alpha(#12131b, 0.5);
+    border: 1px solid alpha(@on_surface, 0.05);
     border-radius: 10px;
-    padding: @DT_SPACING_WAYBAR_PILL_PADDING_Y@px @DT_SPACING_WAYBAR_PILL_PADDING_X@px;
-    margin: @DT_SPACING_WAYBAR_PILL_MARGIN_Y@px @DT_SPACING_WAYBAR_PILL_MARGIN_X@px;
-    box-shadow: @DT_SHADOW_WAYBAR@ alpha(@shadow, @DT_OPACITY_WAYBAR_SHADOW_ALPHA@), @DT_SHADOW_WAYBAR_GLOW@ alpha(@primary, @DT_OPACITY_WAYBAR_GLOW_ALPHA@);
-    transition: all @DT_ANIMATION_WAYBAR_TRANSITION@;
+    padding: 4px 20px;
+    margin: 4px 6px;
+    box-shadow: 0 10px 30px -5px alpha(#000000, 0.3), 0 0 15px alpha(#acc7ff, 0.05);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Hover effect on pills */
 #group-center-pill:hover,
 #group-right-pill:hover {
-    background-color: alpha(@surface, @DT_OPACITY_WAYBAR_PILL_HOVER_BACKGROUND@);
-    border-color: alpha(@on_surface, @DT_OPACITY_WAYBAR_BORDER_HOVER_ALPHA@);
-    box-shadow: @DT_SHADOW_WAYBAR_HOVER@ alpha(@shadow, @DT_OPACITY_WAYBAR_SHADOW_HOVER_ALPHA@), @DT_SHADOW_WAYBAR_HOVER_GLOW@ alpha(@primary, @DT_OPACITY_WAYBAR_GLOW_HOVER_ALPHA@);
+    background-color: alpha(#12131b, 0.7);
+    border-color: alpha(@on_surface, 0.1);
+    box-shadow: 0 10px 30px -5px alpha(#000000, 0.4), 0 0 20px alpha(#acc7ff, 0.1);
 }
 
 /* 
  * Left Pill: Clock & Date 
  */
 #clock {
-    font-size: @DT_TYPOGRAPHY_WAYBAR_FONT_SIZE@px;
+    font-size: 13px;
     color: alpha(@on_surface, 0.4);
-    padding: @DT_SPACING_WAYBAR_PADDING_Y@px @DT_SPACING_WAYBAR_PILL_PADDING_X@px;
+    padding: 4px 20px;
 }
 
 #clock:hover {
@@ -69,8 +69,8 @@ window#waybar {
  * Center Pill: Workspaces & Badge
  */
 #group-center-pill {
-    padding: @DT_SPACING_WAYBAR_CENTER_PADDING_Y@px @DT_SPACING_WAYBAR_CENTER_PADDING_X@px;
-    margin: @DT_SPACING_WAYBAR_PILL_MARGIN_Y@px 0px;
+    padding: 4px 14px;
+    margin: 4px 0px;
 }
 
 #workspaces {
@@ -81,24 +81,24 @@ window#waybar {
 
 #workspaces button {
     padding: 0px;
-    margin: 0px @DT_SPACING_WAYBAR_WORKSPACE_SPACING@px;
-    font-size: @DT_SPACING_WAYBAR_WORKSPACE_SIZE@px;
+    margin: 0px 10px;
+    font-size: 11px;
     background: transparent;
-    color: alpha(@on_surface_variant, @DT_OPACITY_WAYBAR_WORKSPACE_INACTIVE@);
+    color: alpha(@on_surface_variant, 0.7);
     border: none;
     box-shadow: none;
-    transition: all @DT_ANIMATION_WAYBAR_TRANSITION@;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 #workspaces button.active {
-    color: @primary;
-    text-shadow: 0 0 8px alpha(@primary, 0.6);
+    color: #acc7ff;
+    text-shadow: 0 0 8px alpha(#acc7ff, 0.6);
     background: transparent;
     box-shadow: none;
 }
 
 #workspaces button:hover {
-    color: alpha(@on_surface_variant, @DT_OPACITY_WAYBAR_WORKSPACE_HOVER@);
+    color: alpha(@on_surface_variant, 1.0);
     background: transparent;
     box-shadow: none;
 }
@@ -107,7 +107,7 @@ window#waybar {
  * Right Pill: System Status 
  */
 #group-right-pill {
-    padding: @DT_SPACING_WAYBAR_PADDING_Y@px @DT_SPACING_WAYBAR_PILL_PADDING_X@px;
+    padding: 4px 20px;
 }
 
 #pulseaudio,
@@ -116,10 +116,10 @@ window#waybar {
 #battery,
 #custom-notification,
 #custom-exit {
-    font-size: @DT_TYPOGRAPHY_WAYBAR_ICON_FONT_SIZE@px;
-    padding: 0 @DT_SPACING_WAYBAR_ICON_PADDING@px;
+    font-size: 18px;
+    padding: 0 10px;
     color: @on_surface;
-    transition: all @DT_ANIMATION_WAYBAR_HOVER_TRANSITION@;
+    transition: all 0.2s ease;
 }
 
 #pulseaudio,
@@ -135,21 +135,21 @@ window#waybar {
 #bluetooth:hover,
 #network:hover,
 #battery:hover {
-    color: @primary;
+    color: #acc7ff;
 }
 
 #battery {
     font-family: "JetBrains Mono", sans-serif;
-    font-size: @DT_TYPOGRAPHY_WAYBAR_BATTERY_FONT_SIZE@px;
+    font-size: 14px;
 }
 
 #battery.charging,
 #battery.plugged {
-    color: @secondary;
+    color: #aed280;
 }
 
 #battery.critical:not(.charging) {
-    color: @error;
+    color: #ffb4ab;
     animation: blink 0.5s linear infinite alternate;
 }
 
@@ -161,9 +161,9 @@ window#waybar {
 
 /* Divider inside Right Pill */
 #custom-divider {
-    color: alpha(@outline, @DT_OPACITY_WAYBAR_DIVIDER_ALPHA@);
-    font-size: @DT_TYPOGRAPHY_WAYBAR_FONT_SIZE@px;
-    padding: 0 @DT_SPACING_WAYBAR_DIVIDER_PADDING@px;
+    color: alpha(#8e909b, 0.2);
+    font-size: 13px;
+    padding: 0 6px;
 }
 
 /* SwayNC Notifications */
@@ -171,16 +171,16 @@ window#waybar {
     color: @on_surface;
 }
 #custom-notification:hover {
-    color: @primary;
+    color: #acc7ff;
 }
 #custom-notification.active {
-    color: @primary;
+    color: #acc7ff;
 }
 
 /* Power Exit Button */
 #custom-exit {
-    color: alpha(@tertiary_container, @DT_OPACITY_WAYBAR_TERTIARY_ALPHA@);
+    color: alpha(#ffb3b0, 0.85);
 }
 #custom-exit:hover {
-    color: @tertiary_container;
+    color: #ffb3b0;
 }

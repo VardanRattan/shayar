@@ -47,7 +47,7 @@
     // Module Overrides for Shayar Aesthetics
     "clock": {
         "interval": 1,
-        "format": "<span font_desc='@DT_TYPOGRAPHY_WAYBAR_PANGO_FONT@ @DT_TYPOGRAPHY_WAYBAR_FONT_SIZE@'>{0:%H:%M:%S}</span>  <span color='@outline'>│</span>  <span font_desc='Fira Sans @DT_TYPOGRAPHY_UI_SIZE@' color='@outline'>{0:%b %d, %a}</span>",
+        "format": "<span font_desc='@DT_TYPOGRAPHY_WAYBAR_PANGO_FONT@ @DT_TYPOGRAPHY_WAYBAR_FONT_SIZE@'>{0:%H:%M:%S}</span>  <span color='@outline'>│</span>  <span font_desc='@DT_TYPOGRAPHY_WAYBAR_PANGO_FONT@ @DT_TYPOGRAPHY_UI_SIZE@' color='@outline'>{0:%b %d, %a}</span>",
         "tooltip": false,
         "on-click": "~/.config/shayar/bin/shayar-calendar-toggle"
     },

@@ -70,6 +70,8 @@ wallpaper
   → UI reloads instantly
 ```
 
+> **Note**: For a complete deep-dive into every module and script, see [The Shayar Codex (MAP.md)](MAP.md).
+
 | Path | Component |
 |:--|:--|
 | `hypr/` | Hyprland — Lua modular config, animations, keybinds |

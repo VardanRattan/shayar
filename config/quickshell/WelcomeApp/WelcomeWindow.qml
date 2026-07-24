@@ -122,7 +122,7 @@ PanelWindow {
             }
             Text {
                 text: "Welcome to Shayar"
-                font.family: "Fira Sans"
+                font.family: root.ready && root.tokens.ui_family ? root.tokens.ui_family : "Geist"
                 font.pixelSize: root.ready ? root.tokens.font_size_title : 16
                 font.bold: true
                 color: root.colors.on_surface
@@ -130,7 +130,7 @@ PanelWindow {
             }
             Text {
                 text: "Your Hyprland desktop is ready. Here are the essentials:"
-                font.family: "Fira Sans"
+                font.family: root.ready && root.tokens.ui_family ? root.tokens.ui_family : "Geist"
                 font.pixelSize: root.ready ? root.tokens.font_size_body : 12
                 color: root.colors.on_surface_variant
                 wrapMode: Text.WordWrap
@@ -149,7 +149,7 @@ PanelWindow {
         // Keybindings
         Text {
             text: "KEYBINDINGS"
-            font.family: "Fira Sans"
+            font.family: root.ready && root.tokens.ui_family ? root.tokens.ui_family : "Geist"
             font.pixelSize: root.ready ? root.tokens.font_size_small : 11
             font.bold: true
             color: root.colors.primary
@@ -183,14 +183,14 @@ PanelWindow {
                     Text {
                         anchors.centerIn: parent
                         text: model.key
-                        font.family: "JetBrainsMono Nerd Font"
+                        font.family: root.ready && root.tokens.mono_family ? root.tokens.mono_family : "GeistMono Nerd Font"
                         font.pixelSize: root.ready ? root.tokens.font_size_small : 11
                         color: root.colors.primary
                     }
                 }
                 Text {
                     text: model.action
-                    font.family: "Fira Sans"
+                    font.family: root.ready && root.tokens.ui_family ? root.tokens.ui_family : "Geist"
                     font.pixelSize: root.ready ? root.tokens.font_size_body : 12
                     color: root.colors.on_surface_variant
                     Layout.fillWidth: true
@@ -208,7 +208,7 @@ PanelWindow {
         // Quick launch buttons
         Text {
             text: "QUICK LAUNCH"
-            font.family: "Fira Sans"
+            font.family: root.ready && root.tokens.ui_family ? root.tokens.ui_family : "Geist"
             font.pixelSize: root.ready ? root.tokens.font_size_small : 11
             font.bold: true
             color: root.colors.primary
@@ -233,7 +233,7 @@ PanelWindow {
                     Text {
                         anchors.centerIn: parent
                         text: model.label
-                        font.family: "Fira Sans"
+                        font.family: root.ready && root.tokens.ui_family ? root.tokens.ui_family : "Geist"
                         font.pixelSize: root.ready ? root.tokens.font_size_body : 12
                         font.bold: true
                         color: root.colors.on_primary
@@ -263,7 +263,7 @@ PanelWindow {
         }
         Text {
             text: "Run shayar-welcome anytime to see this again"
-            font.family: "Fira Sans"
+            font.family: root.ready && root.tokens.ui_family ? root.tokens.ui_family : "Geist"
             font.pixelSize: root.ready ? root.tokens.font_size_small : 11
             color: Qt.rgba(root.colors.on_surface_variant.r, root.colors.on_surface_variant.g, root.colors.on_surface_variant.b, 0.5)
             Layout.fillWidth: true

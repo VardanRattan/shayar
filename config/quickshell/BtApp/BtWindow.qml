@@ -127,7 +127,7 @@ PanelWindow {
                     text: "\uF1AD"
                     color: root.colors.primary
                     font.pixelSize: root.tokens.icon_size + 4
-                    font.family: "Symbols Nerd Font Mono"
+                    font.family: root.ready && root.tokens.icon_font_family ? root.tokens.icon_font_family : "Symbols Nerd Font Mono"
                 }
                 Text {
                     text: "Bluetooth"
@@ -148,7 +148,7 @@ PanelWindow {
                         text: root.btEnabled ? "\uF1AD" : "\uF057"
                         color: root.btEnabled ? root.colors.primary : root.colors.on_surface_variant
                         font.pixelSize: root.tokens.list_icon_size
-                        font.family: "Symbols Nerd Font Mono"
+                        font.family: root.ready && root.tokens.icon_font_family ? root.tokens.icon_font_family : "Symbols Nerd Font Mono"
                     }
                     MouseArea {
                         id: mouseAreaBtToggle
@@ -180,7 +180,7 @@ PanelWindow {
                         text: "\uF021"
                         color: root.colors.on_surface
                         font.pixelSize: root.tokens.list_icon_size
-                        font.family: "Symbols Nerd Font Mono"
+                        font.family: root.ready && root.tokens.icon_font_family ? root.tokens.icon_font_family : "Symbols Nerd Font Mono"
                         RotationAnimation on rotation {
                             loops: Animation.Infinite
                             from: 0; to: 360
@@ -241,7 +241,7 @@ PanelWindow {
                                 text: "\uF1AD"
                                 color: model.connected ? root.colors.on_primary : root.colors.on_surface
                                 font.pixelSize: root.tokens.list_icon_size
-                                font.family: "Symbols Nerd Font Mono"
+                                font.family: root.ready && root.tokens.icon_font_family ? root.tokens.icon_font_family : "Symbols Nerd Font Mono"
                             }
                             Rectangle {
                                 width: 12; height: 12; radius: 6
@@ -254,7 +254,7 @@ PanelWindow {
                                     text: "\uF028" // Actually, \uF132 (shield) or \uF00C (check). \uF058 (check circle)
                                     color: root.colors.primary
                                     font.pixelSize: 8
-                                    font.family: "Symbols Nerd Font Mono"
+                                    font.family: root.ready && root.tokens.icon_font_family ? root.tokens.icon_font_family : "Symbols Nerd Font Mono"
                                 }
                             }
                         }

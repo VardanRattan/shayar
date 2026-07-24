@@ -145,6 +145,7 @@ generate_image_variants() {
     info "Square wallpaper created"
     echo "* { current-image: url(\"$BLURRED_WALLPAPER\", height); }" > "$RASI_FILE"
     info "Rasi file updated"
+    reload_sddm
 }
 
 # ============================================================
@@ -226,7 +227,6 @@ else
     reload_waybar
     reload_swaync
     reload_quickshell
-    reload_sddm
     run_extensions "post-reload"
     generate_image_variants &
 fi

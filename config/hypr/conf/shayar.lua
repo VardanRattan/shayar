@@ -7,9 +7,15 @@
 -- HOME directory
 local HOME = os.getenv("HOME")
 
--- Prepend custom bin dirs to PATH
+-- Prepend custom bin dirs to PATH (idempotent)
 local current_path = os.getenv("PATH")
-hl.env("PATH", HOME .. "/.local/bin:" .. HOME .. "/.cargo/bin:" .. current_path)
+if not current_path:find(HOME .. "/%.local/bin", 1, true) then
+    current_path = HOME .. "/.local/bin:" .. current_path
+end
+if not current_path:find(HOME .. "/%.cargo/bin", 1, true) then
+    current_path = HOME .. "/.cargo/bin:" .. current_path
+end
+hl.env("PATH", current_path)
 
 -- Pavucontrol
 hl.window_rule({
@@ -123,8 +129,7 @@ hl.env("QT_WAYLAND_DISABLE_WINDOWDECORATION", "1")
 hl.env("XDG_CURRENT_DESKTOP", "Hyprland")
 hl.env("XDG_SESSION_DESKTOP", "Hyprland")
 
--- GDK
-hl.env("GDK_SCALE", "1")
+-- GDK (scale is set dynamically by autostart.lua based on monitor scale)
 
 -- Toolkit Backend
 hl.env("GDK_BACKEND", "wayland,x11,*")

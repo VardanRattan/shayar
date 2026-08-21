@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DELTA="${1:-0.05}"
+MAX="${2:-1.5}"
+
+CURRENT=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{print $2}')
+NEW=$(awk "BEGIN{v=$CURRENT+$DELTA; if(v>$MAX)v=$MAX; if(v<0)v=0; printf \"%.2f\",v}")
+wpctl set-volume -l "$MAX" @DEFAULT_AUDIO_SINK@ "$NEW"

@@ -50,7 +50,6 @@ SELECTED=$(echo "$LIST" | fzf \
     )
 # --- 4. Action ---
 if [ -n "$SELECTED" ]; then
-    printf '{"action": "remove", "identifier": "fzf_preview"}\n' > /tmp/fzf-ueberzug.pipe 2>/dev/null
     # Execute shayar-wallpaper script
     "$HOME/.config/shayar/scripts/shayar-wallpaper" "$SELECTED" >/dev/null 2>&1 &
     exit 0

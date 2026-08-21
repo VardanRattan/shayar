@@ -3,9 +3,9 @@
 ## Architecture
 
 - **Single theme**: solid backgrounds (waybar/swaync/rofi/QS applets)
-- **Single visual source**: `config/shayar/themes/design-tokens.json` (~304 tokens across 9 sections)
+- **Single visual source**: `config/shayar/themes/design-tokens.json` (7 sections)
 - **Single settings file**: `config/shayar/settings/shayar.conf` (23 lines, `KEY="value"`)
-- **9 generated token files**: CSS, Lua, Rasi, Env, Hyprlock, Kitty, GTK, `shayar.json`, `fastfetch.jsonc` — run `shayar-design-tokens generate` after any change to `design-tokens.json`
+- **Generated token files**: CSS, Lua, Rasi, Env, Hyprlock, Kitty, `quickshell-tokens.json`, `shayar.json`, `fastfetch.jsonc` — run `shayar-design-tokens generate` after any change to `design-tokens.json`
 - **Color pipeline**: `shayar.json` → matugen → per-component `colors.*` files → all CSS/Lua/Rasi configs
 - **Startup order**: `autostart.lua` fires `shayar-autostart` and `gtk.sh` concurrently via `hl.exec_cmd()` (non-blocking). `shayar-autostart` backgrounds `shayar-wallpaper` which runs matugen synchronously, then launches and reloads Waybar. This prevents stale colors on boot.
 - **Theme switching**: `themes/<name>/theme.sh` writes runtime values; `shayar-apply-theme` reads `themed.lst` manifest
@@ -80,14 +80,12 @@ Available extensions in `config/shayar/extensions/available/`:
 ## Design tokens structure (`design-tokens.json`)
 
 - **colors** (50): MD3 palette — surface, primary, secondary, tertiary, error + variants
-- **typography** (22): font families, sizes, icon/cursor/GTK theme names
-- **spacing** (105): rounding, gaps, borders, shadows, blur, per-component dimensions
-- **opacity** (26): active/inactive, per-component opacities
-- **animation** (29): 14 bezier curves, 10 speed values, 6 transitions
-- **shadow** (5): waybar + swaync CSS shadow strings
-- **quickshell** (60): QS-specific tokens — panel sizes, spacing, per-app radii, alphas
-- **kitty** (9): font, size, window dims, padding, scrollback, cursor blink
-- **gtk** (6): GTK theme names
+- **typography** (14): font families, sizes, icon/cursor themes
+- **spacing** (48): rounding, gaps, borders, shadows, blur, per-component dimensions
+- **opacity** (6): active/inactive/fullscreen, swaync alpha values
+- **animation** (21): bezier curves, speed values, transitions
+- **kitty** (9): font, size, window dims, padding, scrollback, cursor blink, background opacity
+- **quickshell** (45): QS-specific tokens — panel sizes, spacing, per-app radii, alphas, typography
 
 Generated output files write token values in the target format's native syntax (CSS `@define-color`, Lua `dt.*`, env `DT_*`, rasi `$dt-*`, etc.).
 

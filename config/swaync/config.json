@@ -31,6 +31,7 @@
   "widgets": [
     "title",
     "dnd",
+    "backlight",
     "notifications"
   ],
   "widget-config": {
@@ -41,6 +42,12 @@
       "text": "Notifications",
       "clear-all-button": true,
       "button-text": "Clear"
+    },
+    "backlight": {
+      "label": "Brightness",
+      "device": "nvidia_0",
+      "subsystem": "backlight",
+      "min": 0
     }
   }
 }

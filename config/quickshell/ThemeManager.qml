@@ -52,18 +52,13 @@ QtObject {
 
     property QtObject tokens: QtObject {
         property int panel_width: 180
-        property int panel_width_wide: 320
+        property int panel_width_wide: 380
         property int panel_width_vol: 200
         property int panel_radius: 40
         property int net_panel_radius: 24
         property int bt_panel_radius: 24
         property int vol_panel_radius: 12
-        property real panel_bg_alpha: 0.95
-        property real blur_strength: 0.7
-        property real blur_saturation: 0.0
-        property real gradient_top_alpha: 0.12
-        property real gradient_mid_alpha: 0.04
-        property real gradient_lower_alpha: 0.01
+        property real panel_bg_alpha: 1
         property real border_alpha: 0.2
         property int border_width: 1
         property real shadow_alpha: 0.4
@@ -88,29 +83,28 @@ QtObject {
         property int calendar_radius: 24
         property int calendar_inner_margin: 20
         property int calendar_spacing: 10
-        property int calendar_grid_spacing: 3
         property int font_size_title: 16
         property int font_size_body: 12
-        property real hover_scale: 1.05
         property int list_inner_margin: 16
         property int list_row_margin: 8
         property int list_row_spacing: 10
         property int list_column_spacing: 8
-        property int header_spacing: 8
         property int toggle_button_size: 32
         property int list_icon_size: 14
         property real separator_alpha: 0.1
         property real row_hover_alpha: 0.15
-        property real row_selected_alpha: 0.1
-        property real row_connected_alpha: 0.12
-        property real row_border_alpha: 0.3
         property real icon_circle_alpha: 0.6
-        property real track_alpha: 0.1
         property int thumb_size: 14
         property int bar_radius: 6
         property int bar_min_height: 6
         property int welcome_panel_width: 420
         property int welcome_panel_radius: 24
+        property real badge_alpha: 0.15
+        property real badge_paired_alpha: 0.1
+        property real badge_border_alpha: 0.3
+        property string ui_family: "Geist"
+        property string mono_family: "GeistMono Nerd Font"
+        property string icon_font_family: "Symbols Nerd Font Mono"
 
         function updateFromJson(jsonString) {
             try {

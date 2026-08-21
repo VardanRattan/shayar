@@ -55,22 +55,24 @@ stop_listener() {
         return 1
     fi
 
-    echo "Attempting to stop '$script_name'..."
-
     # Find the PID of the running script
-    local pid=$(pgrep -f "$script_path")
+    local pid=$(pgrep -f "$script_path" || true)
 
     if [ -z "$pid" ]; then
         echo "Listener '$script_name' is not running."
         return 0
     else
         echo "Found PID(s) for '$script_name': $pid. Sending SIGTERM..."
-        kill "$pid"
-        # Give it a moment to terminate gracefully
-        sleep 1
-        if pgrep -f "$script_path" >/dev/null; then
+        kill "$pid" 2>/dev/null || true
+        # Fast poll up to 100ms for graceful shutdown
+        local count=0
+        while pgrep -f "$script_path" >/dev/null 2>&1 && [ $count -lt 5 ]; do
+            sleep 0.02
+            count=$((count + 1))
+        done
+        if pgrep -f "$script_path" >/dev/null 2>&1; then
             echo "Listener '$script_name' did not stop gracefully. Sending SIGKILL..."
-            kill -9 "$pid"
+            kill -9 "$pid" 2>/dev/null || true
             echo "Listener '$script_name' forcefully stopped."
         else
             echo "Listener '$script_name' stopped successfully."
@@ -81,7 +83,6 @@ stop_listener() {
 # Function to restart a specific listener script
 restart_listener() {
     local script_name="$1"
-    echo "Attempting to restart '$script_name'..."
     stop_listener "$script_name"
     start_listener "$script_name"
 }
@@ -91,7 +92,7 @@ case "${1:-}" in
 --startall)
     echo "Starting all registered listeners..."
     for key in "${!LISTENERS[@]}"; do
-        restart_listener "$key"
+        start_listener "$key"
     done
     echo "All registered listeners processed."
     ;;

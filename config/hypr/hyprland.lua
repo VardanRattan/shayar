@@ -9,7 +9,6 @@
 require("functions")
 
 -- MONITORS
-require("conf.monitor")
 require("monitors")
 
 -- INPUT
@@ -48,5 +47,4 @@ if f then
         print("[ERROR] Failed to load custom.lua: " .. tostring(err))
     end
 end
-
 

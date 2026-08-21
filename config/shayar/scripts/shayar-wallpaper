@@ -18,7 +18,7 @@ BLURRED_WALLPAPER="$CACHE_FOLDER/blurred_wallpaper.png"
 SQUARE_WALLPAPER="$CACHE_FOLDER/square_wallpaper.png"
 RASI_FILE="$CACHE_FOLDER/current_wallpaper.rasi"
 source "$HOME/.config/shayar/settings/shayar.conf" 2>/dev/null
-[ -f "$HOME/.config/shayar/library.sh" ] && source "$HOME/.config/shayar/library.sh"
+[ -f "$HOME/.config/shayar/library.sh" ] && source "$HOME/.config/shayar/library.sh" || true
 
 # ============================================================
 # Logging
@@ -55,7 +55,7 @@ show_help() {
 }
 
 send_notification() {
-    [ "$NOTIFICATIONS" = true ] || return
+    [ "$NOTIFICATIONS" = true ] || return 0
     notify-send -a "shayar-wallpaper" -i "preferences-desktop-wallpaper-symbolic" "$1" "$2"
 }
 
@@ -98,8 +98,12 @@ run_matugen() {
     [ -f "$HOME/.local/bin/matugen" ] && bin="$HOME/.local/bin/matugen"
     command -v "$bin" >/dev/null 2>&1 || { warn "matugen not found, keeping previous colors"; return 0; }
 
+    local matugen_args=()
+    [ -n "${MATUGEN_MODE:-}" ] && matugen_args+=("-m" "$MATUGEN_MODE")
+    [ -n "${MATUGEN_SCHEME:-}" ] && matugen_args+=("-t" "$MATUGEN_SCHEME")
+
     info "Running matugen using wallpaper"
-    "$bin" image "$IMAGE_PATH" || { warn "matugen failed, keeping previous colors"; return 1; }
+    "$bin" image "$IMAGE_PATH" "${matugen_args[@]}" || { warn "matugen failed, keeping previous colors"; return 0; }
     info "Matugen updated"
 }
 
@@ -110,7 +114,6 @@ reload_waybar() {
 }
 
 reload_swaync() {
-    sleep 0.1
     swaync-client -rs
     info "SwayNC refreshed"
 }
@@ -129,22 +132,24 @@ reload_sddm() {
 }
 
 generate_image_variants() {
-    command -v magick >/dev/null 2>&1 || { warn "ImageMagick missing, skipping image variants"; return 0; }
-    
-    local blur="${BLUR:-50x30}"
-    if [ "$blur" != "0x0" ]; then
-        # Blazing fast: Scale down to 10%, apply small blur, scale back up.
-        # This avoids CPU-intensive full-res convolution blurs.
-        magick "$IMAGE_PATH" -scale 10% -blur 0x5 -resize 1000% "$BLURRED_WALLPAPER"
+    if command -v magick >/dev/null 2>&1; then
+        local blur="${BLUR:-50x30}"
+        if [ "$blur" != "0x0" ]; then
+            # Blazing fast: Scale down to 10%, apply small blur, scale back up.
+            # This avoids CPU-intensive full-res convolution blurs.
+            magick "$IMAGE_PATH" -scale 10% -blur 0x5 -resize 1000% "$BLURRED_WALLPAPER"
+        else
+            magick "$IMAGE_PATH" -resize 75% "$BLURRED_WALLPAPER"
+        fi
+        info "Blurred wallpaper created"
+        
+        magick "$IMAGE_PATH" -gravity Center -extent 1:1 -scale 500x500 "$SQUARE_WALLPAPER"
+        info "Square wallpaper created"
+        echo "* { current-image: url(\"$BLURRED_WALLPAPER\", height); }" > "$RASI_FILE"
+        info "Rasi file updated"
     else
-        magick "$IMAGE_PATH" -resize 75% "$BLURRED_WALLPAPER"
+        warn "ImageMagick missing, skipping image variants"
     fi
-    info "Blurred wallpaper created"
-    
-    magick "$IMAGE_PATH" -gravity Center -extent 1:1 -scale 500x500 "$SQUARE_WALLPAPER"
-    info "Square wallpaper created"
-    echo "* { current-image: url(\"$BLURRED_WALLPAPER\", height); }" > "$RASI_FILE"
-    info "Rasi file updated"
     reload_sddm
 }
 
@@ -219,7 +224,7 @@ info "Cache updated: $IMAGE_PATH"
 wait_for_awww
 set_wallpaper
 run_extensions "wallpaper-change"
-if "$SKIP_THEMING"; then
+if [ "$SKIP_THEMING" = true ]; then
     info "Updating theming skipped"
 else
     run_matugen

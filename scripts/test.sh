@@ -93,7 +93,7 @@ echo "--- Token generation ---"
 check "shayar-design-tokens generate" config/shayar/scripts/shayar-design-tokens generate
 
 # Verify all expected output files exist
-for f in design-tokens.css design-tokens.lua design-tokens.rasi design-tokens.env design-tokens-hyprlock.conf design-tokens-kitty.conf design-tokens-gtk.ini shayar.json; do
+for f in design-tokens.css design-tokens.lua design-tokens.rasi design-tokens.env design-tokens-hyprlock.conf design-tokens-kitty.conf shayar.json quickshell-tokens.json fastfetch.jsonc; do
     check "generated: $f" test -f config/shayar/themes/"$f"
 done
 

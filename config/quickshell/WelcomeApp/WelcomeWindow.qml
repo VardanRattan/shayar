@@ -160,14 +160,22 @@ PanelWindow {
             model: ListModel {
                 ListElement { key: "SUPER + Return"; action: "Terminal" }
                 ListElement { key: "SUPER + B"; action: "Browser" }
+                ListElement { key: "SUPER + E"; action: "File Manager" }
                 ListElement { key: "SUPER + CTRL + Return"; action: "App Launcher" }
-                ListElement { key: "SUPER + CTRL + W"; action: "Random Wallpaper" }
-                ListElement { key: "SUPER + V"; action: "Clipboard Manager" }
                 ListElement { key: "ALT + SPACE"; action: "Settings Menu" }
-                ListElement { key: "SUPER + CTRL + K"; action: "Keybindings" }
+                ListElement { key: "SUPER + V"; action: "Clipboard Manager" }
+                ListElement { key: "SUPER + CTRL + N"; action: "Network Panel" }
+                ListElement { key: "SUPER + CTRL + B"; action: "Bluetooth Panel" }
                 ListElement { key: "SUPER + CTRL + L"; action: "Power Menu" }
+                ListElement { key: "SUPER + SHIFT + L"; action: "Lock Screen" }
                 ListElement { key: "SUPER + SHIFT + B"; action: "Toggle Statusbar" }
+                ListElement { key: "SUPER + CTRL + K"; action: "Keybindings" }
                 ListElement { key: "SUPER + CTRL + H"; action: "This Screen" }
+                ListElement { key: "SUPER + Q"; action: "Close Window" }
+                ListElement { key: "SUPER + F"; action: "Fullscreen" }
+                ListElement { key: "SUPER + T"; action: "Toggle Float" }
+                ListElement { key: "SUPER + S"; action: "Scratchpad" }
+                ListElement { key: "SUPER + 1-9"; action: "Switch Workspace" }
             }
             delegate: RowLayout {
                 Layout.fillWidth: true

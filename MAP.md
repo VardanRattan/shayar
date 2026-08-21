@@ -105,7 +105,6 @@ Default wallpapers. `default.png` is the only fallback wallpaper.
 - **`shayar-sddm-sync`** — Syncs current wallpaper and matugen colors to SDDM login screen. Requires `--install` first, then run after wallpaper changes. Requires sudo.
 - **`shayar-welcome-toggle`** — Welcome screen (Quickshell). Closes other 5 panels.
 - **`shayar-welcome`** — Opens the welcome screen (Quickshell).
-- **`shayar-bt-popup`** — Bluetooth popup (legacy).
 - **`shayar-wifi-popup`** — WiFi popup (legacy).
 
 ### `scripts/`

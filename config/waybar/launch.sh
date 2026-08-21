@@ -67,78 +67,66 @@ CONFIG_PATH="$CONFIG_SRC"
 STYLE_PATH=""
 
 generate_files() {
-    if [ -f "$TOKENS_ENV" ]; then
-        cp "$CONFIG_SRC" "$CONFIG_TMP"
-        # Process longer keys first to prevent substring collisions (e.g. @on-surface before @on-surface-variant)
-        while IFS='=' read -r key value; do
-            case "$key" in
-                DT_COLORS_*)
-                    color_name="$(echo "$key" | sed 's/^DT_COLORS_//' | tr '[:upper:]' '[:lower:]')"
-                    hex_value="$(echo "$value" | tr -d '"')"
-                    sed -i "s|@${color_name}|${hex_value}|g" "$CONFIG_TMP"
-                    ;;
-                DT_*)
-                    val="$(echo "$value" | tr -d '"')"
-                    sed -i "s|@${key}@|${val}|g" "$CONFIG_TMP"
-                    ;;
-            esac
-        done < <(awk '{ print length, $0 }' "$TOKENS_ENV" | sort -rn | cut -d' ' -f2-)
-        echo ":: Resolved @color refs -> $CONFIG_TMP"
-        CONFIG_PATH="$CONFIG_TMP"
-    fi
+    [ -f "$TOKENS_ENV" ] || return 0
+
+    # Single awk pass: load all tokens, then replace @refs@ in one sweep.
+    # This replaces 200+ individual sed -i forks with a single fork per file.
+    _resolve() {
+        local src="$1" dst="$2"
+        awk -F'=' '
+            NR==FNR {
+                key=$1; val=""
+                for (i=2;i<=NF;i++) val = (val=="" ? $i : val "=" $i)
+                gsub(/^"/, "", val); gsub(/"$/, "", val)
+                if (key ~ /^DT_COLORS_/) {
+                    name=substr(key, 11)
+                    lower=tolower(name)
+                    gsub(/_/, "-", lower)
+                    refs["@" lower]=val             # @primary (no trailing @)
+                } else {
+                    refs["@" key "@"]=val           # @DT_SPACING_...@ (with trailing @)
+                }
+                next
+            }
+            {
+                for (k in refs) gsub(k, refs[k])
+                print
+            }
+        ' "$TOKENS_ENV" "$src" > "$dst"
+    }
+
+    cp "$CONFIG_SRC" "$CONFIG_TMP"
+    _resolve "$CONFIG_TMP" "$CONFIG_TMP.resolved"
+    mv "$CONFIG_TMP.resolved" "$CONFIG_TMP"
+    echo ":: Resolved @color refs -> $CONFIG_TMP"
+    CONFIG_PATH="$CONFIG_TMP"
 
     if [ ! -f "$HOME/.config/shayar/settings/waybar-disabled" ]; then
         STYLE_SRC="$HOME/.config/waybar/themes${arrThemes[1]}/$style_file"
         STYLE_PATH="$STYLE_SRC"
-        if [ -f "$TOKENS_ENV" ]; then
-            cp "$STYLE_SRC" "$STYLE_TMP"
-            while IFS='=' read -r key value; do
-                case "$key" in
-                    DT_COLORS_*)
-                        color_name="$(echo "$key" | sed 's/^DT_COLORS_//' | tr '[:upper:]' '[:lower:]')"
-                        hex_value="$(echo "$value" | tr -d '"')"
-                        sed -i "s|@${color_name}|${hex_value}|g" "$STYLE_TMP"
-                        ;;
-                    DT_*)
-                        val="$(echo "$value" | tr -d '"')"
-                        sed -i "s|@${key}@|${val}|g" "$STYLE_TMP"
-                        ;;
-                esac
-            done < <(awk '{ print length, $0 }' "$TOKENS_ENV" | sort -rn | cut -d' ' -f2-)
-            # Concatenate imported CSS into a single flat file so @import paths resolve
-            CSS_IMPORTS=$(grep -oP '@import\s+['"'"'"]([^'"'"'"]+)['"'"'"]\s*;' "$STYLE_TMP" | head -5)
-            if [ -n "$CSS_IMPORTS" ]; then
-                > "$STYLE_FINAL"
-                while IFS= read -r import_line; do
-                    import_path=$(echo "$import_line" | grep -oP '(['"'"'"])([^'"'"'"]+)\1' | tr -d '"' | tr -d "'")
-                    if [ -n "$import_path" ]; then
-                        # Resolve relative to the theme directory
-                        resolved="$HOME/.config/waybar/themes${arrThemes[1]}/$(dirname "$style_file")/$import_path"
-                        [ -f "$resolved" ] && cat "$resolved" >> "$STYLE_FINAL"
-                    fi
-                done <<< "$CSS_IMPORTS"
-                # Append the main CSS (excluding @import lines)
-                grep -v '^\s*@import' "$STYLE_TMP" >> "$STYLE_FINAL"
-                # Re-resolve tokens on the flat file (imports may contain @DT_*@ refs)
-                while IFS='=' read -r key value; do
-                    case "$key" in
-                        DT_COLORS_*)
-                        color_name="$(echo "$key" | sed 's/^DT_COLORS_//' | tr '[:upper:]' '[:lower:]')"
-                        hex_value="$(echo "$value" | tr -d '"')"
-                        sed -i "s|@${color_name}|${hex_value}|g" "$STYLE_FINAL"
-                            ;;
-                        DT_*)
-                            val="$(echo "$value" | tr -d '"')"
-                            sed -i "s|@${key}@|${val}|g" "$STYLE_FINAL"
-                            ;;
-                    esac
-                done < <(awk '{ print length, $0 }' "$TOKENS_ENV" | sort -rn | cut -d' ' -f2-)
-                STYLE_PATH="$STYLE_FINAL"
-            else
-                STYLE_PATH="$STYLE_TMP"
-            fi
-            echo ":: Resolved @color refs -> $STYLE_PATH"
+        cp "$STYLE_SRC" "$STYLE_TMP"
+        _resolve "$STYLE_TMP" "$STYLE_TMP.resolved"
+        mv "$STYLE_TMP.resolved" "$STYLE_TMP"
+
+        # Flatten @import chains into a single file
+        CSS_IMPORTS=$(grep -oP '@import\s+['"'"'"]([^'"'"'"]+)['"'"'"]\s*;' "$STYLE_TMP" | head -5)
+        if [ -n "$CSS_IMPORTS" ]; then
+            > "$STYLE_FINAL"
+            while IFS= read -r import_line; do
+                import_path=$(echo "$import_line" | grep -oP '(['"'"'"])([^'"'"'"]+)\1' | tr -d '"' | tr -d "'")
+                if [ -n "$import_path" ]; then
+                    resolved="$HOME/.config/waybar/themes${arrThemes[1]}/$(dirname "$style_file")/$import_path"
+                    [ -f "$resolved" ] && cat "$resolved" >> "$STYLE_FINAL"
+                fi
+            done <<< "$CSS_IMPORTS"
+            grep -v '^\s*@import' "$STYLE_TMP" >> "$STYLE_FINAL"
+            _resolve "$STYLE_FINAL" "$STYLE_FINAL.resolved"
+            mv "$STYLE_FINAL.resolved" "$STYLE_FINAL"
+            STYLE_PATH="$STYLE_FINAL"
+        else
+            STYLE_PATH="$STYLE_TMP"
         fi
+        echo ":: Resolved @color refs -> $STYLE_PATH"
     fi
 }
 
@@ -164,7 +152,7 @@ fi
 
 killall -q waybar 2>/dev/null || true
 pkill -x waybar 2>/dev/null || true
-sleep 0.2
+sleep 0.05
 
 generate_files
 

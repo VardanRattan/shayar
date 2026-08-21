@@ -60,7 +60,7 @@ phase1_packages() {
             )
             install_pkg "$pm" "${arch_pkgs[@]}"
             # AUR / arch-specific
-            install_pkg "$pm" tty-clock ttf-rubik ttf-geist ttf-geist-mono-nerd bibata-cursor-theme awww matugen quickshell-git kora-icon-theme tela-circle-dracula-icon-theme bluetuith-bin 2>/dev/null || \
+            install_pkg "$pm" tty-clock ttf-rubik ttf-geist ttf-geist-mono-nerd bibata-cursor-theme awww matugen quickshell-git kora-icon-theme tela-circle-dracula-icon-theme 2>/dev/null || \
                 warn "Some AUR packages failed. Install manually."
             ;;
         dnf)

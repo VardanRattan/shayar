@@ -51,8 +51,8 @@ get_wallpaper() {
         wp=$(awww query 2>/dev/null | grep -oP 'image: \K.*' || true)
     fi
     # Fallback: check cached wallpaper
-    if [ -z "$wp" ] && [ -f "${HOME}/.cache/shayar/current_wallpaper" ]; then
-        wp=$(cat "${HOME}/.cache/shayar/current_wallpaper")
+    if [ -z "$wp" ] && [ -f "${HOME}/.cache/shayar/hyprland-dotfiles/current_wallpaper" ]; then
+        wp=$(cat "${HOME}/.cache/shayar/hyprland-dotfiles/current_wallpaper")
     fi
     # Fallback: check design-tokens
     if [ -z "$wp" ] && [ -f "$HOME/.config/shayar/wallpapers/default.png" ]; then
@@ -65,10 +65,19 @@ get_wallpaper() {
     echo "$wp"
 }
 
-# --- Extract color from shayar.json ---
+QUICKSHELL_COLORS="${HOME}/.config/shayar/colors/quickshell.json"
+
+# --- Extract color from dynamic matugen colors or shayar.json ---
 get_color() {
     local key="$1"
-    jq -r ".colors.${key}.dark.color // empty" "$SHAYAR_JSON" 2>/dev/null || echo "#000000"
+    local color=""
+    if [ -f "$QUICKSHELL_COLORS" ]; then
+        color=$(jq -r ".${key} // empty" "$QUICKSHELL_COLORS" 2>/dev/null)
+    fi
+    if [ -z "$color" ]; then
+        color=$(jq -r ".colors.${key}.dark.color // empty" "$SHAYAR_JSON" 2>/dev/null)
+    fi
+    echo "${color:-#000000}"
 }
 
 # --- Generate theme.conf.user ---

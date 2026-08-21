@@ -65,10 +65,12 @@
             "car": "",
             "default": ["", "", ""]
         },
-        "tooltip-format": "Volume: {volume}%",
+        "tooltip-format": "{volume}%\n{icon}",
+        "tooltip-format-muted": "Muted",
+        "scroll-step": 0,
         "on-click": "~/.config/shayar/bin/shayar-vol-toggle",
-        "on-scroll-up": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+",
-        "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
+        "on-scroll-up": "~/.config/shayar/bin/shayar-vol-scroll 0.05 1.5",
+        "on-scroll-down": "~/.config/shayar/bin/shayar-vol-scroll -0.05 1.5"
     },
 
     "bluetooth": {
@@ -76,8 +78,12 @@
         "format-disabled": "󰂲",
         "format-off": "󰂲",
         "format-connected": "󰂱 {num_connections}",
+        "format-connected-battery": "󰂱 {device_battery_percentage}%",
         "format-no-controller": "󰂲",
         "tooltip-format": "Bluetooth: {status}",
+        "tooltip-format-connected": "{controller_alias}\t{controller_address}\n\nConnected Devices ({num_connections}):\n{device_enumerate}",
+        "tooltip-format-enumerate-connected": "• {device_alias}\t{device_address}",
+        "tooltip-format-enumerate-connected-battery": "• {device_alias}\t{device_battery_percentage}%",
         "on-click": "~/.config/shayar/bin/shayar-bt-toggle"
     },
 
@@ -86,6 +92,9 @@
         "format-ethernet": "",
         "format-disconnected": "⚠",
         "tooltip-format": "Network: {essid} ({signalStrength}%)",
+        "tooltip-format-wifi": "  {essid} ({signalStrength}%)\nIP: {ipaddr}/{cidr}\nInterface: {ifname} ({frequency}GHz)",
+        "tooltip-format-ethernet": "  {ifname}\nIP: {ipaddr}/{cidr}",
+        "tooltip-format-disconnected": "⚠ Disconnected",
         "on-click": "~/.config/shayar/bin/shayar-net-toggle",
         "on-click-right": "~/.config/shayar/scripts/shayar-toggle-nmapplet toggle"
     },

@@ -88,16 +88,6 @@ def generate_kitty_conf(tokens, out_dir):
             f.write(f"{k} {v}\n")
     print(f"Generated: {out_path}")
 
-def generate_gtk_settings(tokens, out_dir):
-    out_path = os.path.join(out_dir, "design-tokens-gtk.ini")
-    gtk = tokens.get("gtk", {})
-    with open(out_path, "w") as f:
-        f.write("# Generated from design-tokens.json -- DO NOT EDIT\n")
-        for k, v in gtk.items():
-            key_formatted = k.replace("_", "-")
-            f.write(f"gtk-{key_formatted}={v}\n")
-    print(f"Generated: {out_path}")
-
 def generate_env(tokens, out_dir):
     out_path = os.path.join(out_dir, "design-tokens.env")
     lines = ["# Generated from design-tokens.json -- DO NOT EDIT"]
@@ -264,7 +254,6 @@ def main():
     generate_rasi(flat_tokens, out_dir)
     generate_hyprlock_conf(flat_tokens, out_dir)
     generate_kitty_conf(tokens, out_dir)
-    generate_gtk_settings(tokens, out_dir)
     generate_env(tokens, out_dir)
     generate_shayar_json(tokens, out_dir)
     generate_quickshell_tokens(tokens, out_dir)

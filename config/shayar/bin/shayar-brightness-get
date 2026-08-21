@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BACKLIGHT_DIR="/sys/class/backlight"
+
+device=""
+for d in "$BACKLIGHT_DIR"/*/; do
+    [ -d "$d" ] && { device="$d"; break; }
+done
+
+if [ -z "$device" ]; then
+    echo "0"
+    exit 1
+fi
+
+max=$(cat "$device/max_brightness")
+cur=$(cat "$device/brightness")
+
+if [ "$max" -eq 0 ]; then
+    echo "0"
+    exit 1
+fi
+
+echo $(( cur * 100 / max ))

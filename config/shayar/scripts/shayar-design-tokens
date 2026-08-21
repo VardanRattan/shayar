@@ -35,7 +35,7 @@ verify() {
     # Delegate to the fast python compiler for validation
     OUT_DIR="$tmp" TOKENS_FILE="$TOKENS_FILE" python3 "$(dirname "$0")/design_tokens.py" >/dev/null
     
-    for f in design-tokens.css design-tokens.lua design-tokens.rasi design-tokens-rofi-font.rasi waybar-style.css design-tokens.env design-tokens-hyprlock.conf design-tokens-kitty.conf design-tokens-gtk.ini shayar.json quickshell-tokens.json; do
+    for f in design-tokens.css design-tokens.lua design-tokens.rasi design-tokens-rofi-font.rasi waybar-style.css design-tokens.env design-tokens-hyprlock.conf design-tokens-kitty.conf shayar.json quickshell-tokens.json; do
         if ! diff -q "$tmp/$f" "$saved/$f" >/dev/null 2>&1; then
             echo "DRIFT: $f is out of sync with design-tokens.json"
             rc=1
@@ -61,7 +61,7 @@ doctor() {
             rc=1
         fi
     done
-    for f in design-tokens.css design-tokens.lua design-tokens.rasi design-tokens.env design-tokens-hyprlock.conf design-tokens-kitty.conf design-tokens-gtk.ini; do
+    for f in design-tokens.css design-tokens.lua design-tokens.rasi design-tokens.env design-tokens-hyprlock.conf design-tokens-kitty.conf; do
         if [ -s "$OUT_DIR/$f" ]; then
             echo "  [ok]      $f"
         else

@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -uo pipefail
 
 case "${1:-}" in
     d)
-        cliphist list | rofi -dmenu -replace -config ~/.config/rofi/config-cliphist.rasi | cliphist delete
+        cliphist list | rofi -dmenu -replace -config ~/.config/rofi/config-cliphist.rasi | cliphist delete || true
     ;;
     w)    
         cliphist wipe
     ;;
     *)
-        cliphist list | rofi -dmenu -replace -config ~/.config/rofi/config-cliphist.rasi | cliphist decode | wl-copy
+        cliphist list | rofi -dmenu -replace -config ~/.config/rofi/config-cliphist.rasi | cliphist decode | wl-copy || true
     ;;
 esac

@@ -62,8 +62,17 @@ PanelWindow {
     property int todayDate: new Date().getDate()
     property int todayMonth: new Date().getMonth()
     property int todayYear: new Date().getFullYear()
+    property string currentTime: ""
     ListModel { id: dayModel }
-    ListModel { id: weekModel }
+    Timer {
+        interval: 1000
+        running: root.isOpen
+        repeat: true
+        onTriggered: {
+            var now = new Date()
+            currentTime = Qt.format(now, "HH:mm")
+        }
+    }
     Component.onCompleted: updateCalendar(currentYear, currentMonth)
     function prevMonth() {
         if (currentMonth === 0) { currentMonth = 11; currentYear-- }
@@ -82,20 +91,11 @@ PanelWindow {
     }
     function updateCalendar(year, month) {
         dayModel.clear()
-        weekModel.clear()
         var firstDay = new Date(year, month, 1)
         var startingDayOfWeek = firstDay.getDay()
         var startCell = startingDayOfWeek === 0 ? 6 : startingDayOfWeek - 1
         var daysInMonth = new Date(year, month + 1, 0).getDate()
         var daysInPrevMonth = new Date(year, month, 0).getDate()
-        for (var row = 0; row < 6; row++) {
-            var dateInRow = new Date(year, month, 1 + (row * 7) - startCell)
-            var d = new Date(Date.UTC(dateInRow.getFullYear(), dateInRow.getMonth(), dateInRow.getDate()))
-            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7))
-            var yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1))
-            var weekNo = Math.ceil(((d - yearStart) / 86400000 + 1) / 7)
-            weekModel.append({ weekNumber: weekNo })
-        }
         for (var i = 0; i < 42; i++) {
             if (i < startCell) {
                 dayModel.append({ day: daysInPrevMonth - startCell + i + 1, isCurrentMonth: false, isToday: false })
@@ -188,47 +188,36 @@ PanelWindow {
             anchors.fill: parent
             anchors.margins: root.tokens.calendar_inner_margin
             spacing: root.tokens.calendar_spacing
-            RowLayout {
+            Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 30
-                ActionIcon { iconSrc: Quickshell.env("HOME") + "/.config/quickshell/icons/chevron-left.svg"; onClicked: prevMonth() }
-                Text {
-                    Layout.preferredWidth: 130
-                    text: monthNames[currentMonth] + " " + currentYear
-                    color: root.colors.on_surface
-                    font.pixelSize: root.tokens.font_size_title; font.weight: Font.Bold
-                    horizontalAlignment: Text.AlignHCenter
+                height: 44
+                radius: 12
+                color: Qt.rgba(root.colors.surface_container_high.r, root.colors.surface_container_high.g, root.colors.surface_container_high.b, 0.4)
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.margins: 8
+                    spacing: 8
+                    Text {
+                        text: "\uF073"
+                        color: root.colors.primary
+                        font.pixelSize: root.tokens.icon_size + 4
+                        font.family: root.ready && root.tokens.icon_font_family ? root.tokens.icon_font_family : "Symbols Nerd Font Mono"
+                    }
+                    Text {
+                        text: monthNames[currentMonth] + " " + currentYear
+                        color: root.colors.on_surface
+                        font.pixelSize: root.tokens.font_size_label + 2
+                        font.weight: Font.DemiBold
+                        Layout.fillWidth: true
+                    }
+                    ActionIcon { iconSrc: Quickshell.env("HOME") + "/.config/quickshell/icons/chevron-left.svg"; onClicked: prevMonth() }
+                    ActionIcon { iconSrc: Quickshell.env("HOME") + "/.config/quickshell/icons/chevron-right.svg"; onClicked: nextMonth() }
+                    TodayButton {}
                 }
-                ActionIcon { iconSrc: Quickshell.env("HOME") + "/.config/quickshell/icons/chevron-right.svg"; onClicked: nextMonth() }
-                Item { Layout.fillWidth: true }
-                TodayButton {}
             }
             Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: root.colors.primary; opacity: 0.2 }
             RowLayout {
                 Layout.fillWidth: true; Layout.fillHeight: true; spacing: 8
-                ColumnLayout {
-                    Layout.fillHeight: true; spacing: 3
-                    Text {
-                        Layout.fillWidth: true
-                        text: "Wk"
-                        color: root.colors.on_surface_variant; opacity: 0.7
-                        font.pixelSize: root.tokens.font_size_small; font.weight: Font.Bold
-                        horizontalAlignment: Text.AlignHCenter
-                        Layout.bottomMargin: 3
-                    }
-                    Repeater {
-                        model: weekModel
-                        Text {
-                            Layout.fillWidth: true; Layout.fillHeight: true
-                            text: model.weekNumber
-                            color: root.colors.primary; opacity: 0.6
-                            font.pixelSize: root.tokens.font_size_small
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                    }
-                }
-                Rectangle { implicitWidth: 1; Layout.fillHeight: true; color: root.colors.primary; opacity: 0.2 }
                 ColumnLayout {
                     Layout.fillWidth: true; Layout.fillHeight: true; spacing: 3
                     RowLayout {
@@ -254,25 +243,6 @@ PanelWindow {
                                 Layout.fillWidth: true; Layout.fillHeight: true
                                 radius: width / 2
                                 color: model.isToday ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, root.tokens.primary_alpha) : dayHoverArea.containsMouse ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.08) : "transparent"
-                                Rectangle {
-                                    anchors.centerIn: parent
-                                    width: parent.width; height: parent.height
-                                    radius: width / 2
-                                    color: Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.4)
-                                    visible: model.isToday
-                                    SequentialAnimation on scale {
-                                        running: model.isToday
-                                        loops: Animation.Infinite
-                                        NumberAnimation { to: 1.5; duration: 1500; easing.type: Easing.OutSine }
-                                        NumberAnimation { to: 1.0; duration: 1000; easing.type: Easing.InSine }
-                                    }
-                                    SequentialAnimation on opacity {
-                                        running: model.isToday
-                                        loops: Animation.Infinite
-                                        NumberAnimation { to: 0.0; duration: 1500; easing.type: Easing.OutSine }
-                                        NumberAnimation { to: 1.0; duration: 1000; easing.type: Easing.InSine }
-                                    }
-                                }
                                 Text {
                                     anchors.centerIn: parent
                                     text: model.day
@@ -280,14 +250,6 @@ PanelWindow {
                                     font.weight: model.isToday ? Font.Bold : Font.Normal
                                     color: model.isToday ? root.colors.surface_dim : ((index % 7 >= 5) ? Qt.rgba(root.colors.primary.r, root.colors.primary.g, root.colors.primary.b, 0.8) : root.colors.on_surface)
                                     opacity: model.isCurrentMonth ? 1 : 0.3
-                                }
-                                Rectangle {
-                                    width: 3; height: 3; radius: 1.5
-                                    color: root.colors.primary
-                                    anchors.bottom: parent.bottom
-                                    anchors.bottomMargin: 4
-                                    anchors.horizontalCenter: parent.horizontalCenter
-                                    visible: model.isCurrentMonth && !model.isToday && (model.day % 6 === 0)
                                 }
                                 MouseArea {
                                     id: dayHoverArea

@@ -149,7 +149,7 @@ PanelWindow {
                 Layout.fillWidth: true
                 Layout.preferredHeight: root.tokens.bar_min_height
                 radius: root.tokens.bar_radius
-                color: Qt.rgba(root.colors.on_surface.r, root.colors.on_surface.g, root.colors.on_surface.b, root.tokens.track_alpha)
+                color: Qt.rgba(root.colors.on_surface.r, root.colors.on_surface.g, root.colors.on_surface.b, 0.1)
                 Rectangle {
                     id: volHighlight
                     width: parent.width * root.volume

@@ -34,21 +34,27 @@
 }
 
 .widget-title button {
-  background: @surface_custom;
+  background: alpha(@primary, 0.2);
+  color: @primary;
   border-radius: @DT_SPACING_SWAYNC_BORDER_RADIUS@px;
   padding: 4px 16px;
 }
 
 .widget-title button:hover {
-  background: alpha(@primary, 0.3);
+  background: alpha(@primary, 0.4);
   border-radius: @DT_SPACING_SWAYNC_BORDER_RADIUS@px;
 }
 
-.widget-dnd { margin: 15px 15px 5px 12px; }
+.widget-dnd {
+  margin: 10px 12px;
+  padding: 8px 12px;
+  background: alpha(@surface_container, 0.6);
+  border-radius: @DT_SPACING_SWAYNC_BORDER_RADIUS@px;
+}
 
 .widget-dnd > switch {
   color: @fontcolor;
-  background: @hovercolor;
+  background: alpha(@surface_container_high, 0.7);
   border-radius: 5px;
 }
 
@@ -61,6 +67,47 @@
 }
 
 .widget-dnd > switch:checked slider { background: @inverse_primary; }
+
+.widget-backlight {
+  margin: 5px 12px 10px 12px;
+  padding: 10px 12px;
+  background: alpha(@surface_container, 0.6);
+  border-radius: @DT_SPACING_SWAYNC_BORDER_RADIUS@px;
+}
+
+.widget-backlight label {
+  color: @fontcolor;
+  font-size: 0.9rem;
+}
+
+.widget-backlight scale {
+  margin: 0 10px;
+}
+
+.widget-backlight scale trough {
+  background: alpha(@surface_container_high, 0.7);
+  border-radius: @DT_SPACING_SWAYNC_BORDER_RADIUS@px;
+  min-height: 8px;
+}
+
+.widget-backlight scale trough highlight {
+  background: @primary;
+  border-radius: @DT_SPACING_SWAYNC_BORDER_RADIUS@px;
+  min-height: 8px;
+}
+
+.widget-backlight scale slider {
+  background: @inverse_primary;
+  border-radius: 50%;
+  min-width: 16px;
+  min-height: 16px;
+  margin: -4px;
+  box-shadow: 0 1px 3px 1px alpha(@shadow, 0.3);
+}
+
+.widget-backlight scale slider:hover {
+  background: @primary;
+}
 
 .notification-row .notification-background .notification {
   background-color: @surface;
@@ -101,10 +148,4 @@
 .notification-group-collapse-button:hover,
 .notification-group-close-all-button:hover {
   background: @hovercolor;
-}
-
-trough highlight {
-  background: @primary;
-  border: 2px solid @primary_fixed;
-  border-radius: @DT_SPACING_SWAYNC_BORDER_RADIUS@px;
 }

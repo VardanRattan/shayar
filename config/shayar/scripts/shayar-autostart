@@ -46,7 +46,7 @@ if [ ! -f "$CACHE_FILE" ]; then
 fi
 
 # Start nmapplet
-nm-applet --indicator &
+command -v nm-applet &>/dev/null && nm-applet --indicator &
 
 [ -f "$HOME/.config/shayar/library.sh" ] && source "$HOME/.config/shayar/library.sh" || true
 

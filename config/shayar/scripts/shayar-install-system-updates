@@ -60,11 +60,11 @@ if _checkCommandExists "pacman"; then
         paru_installed="true"
     fi
     if [[ $yay_installed == "true" ]] && [[ $paru_installed == "false" ]]; then
-        yay
+        yay -Syu --noconfirm
     elif [[ $yay_installed == "false" ]] && [[ $paru_installed == "true" ]]; then
         paru -Syu --noconfirm
     else
-        yay
+        yay -Syu --noconfirm
     fi
 
 # Fedora

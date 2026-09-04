@@ -9,4 +9,4 @@ set -euo pipefail
 #
 # Toggle the statusbar used by Shayar OS. 
 
-"$HOME/.config/waybar/toggle.sh"
+qs -c caelestia ipc call drawers toggle bar 2>/dev/null || caelestia shell -d

@@ -47,8 +47,8 @@ phase1_packages() {
     info "Installing system packages via $pm..."
 
     local official=(
-        brightnessctl eza fastfetch fzf grim hypridle hyprland hyprlock imagemagick jq
-        kitty lua playerctl python rofi slurp swaync swappy waybar zsh
+        brightnessctl eza fastfetch fuzzel fzf grim hypridle hyprland hyprlock imagemagick jq
+        kitty lua playerctl python slurp swappy zsh
         wl-clipboard yad flatpak
     )
 
@@ -60,7 +60,7 @@ phase1_packages() {
             )
             install_pkg "$pm" "${arch_pkgs[@]}"
             # AUR / arch-specific
-            install_pkg "$pm" tty-clock ttf-rubik ttf-geist ttf-geist-mono-nerd bibata-cursor-theme awww matugen quickshell-git kora-icon-theme tela-circle-dracula-icon-theme 2>/dev/null || \
+            install_pkg "$pm" tty-clock ttf-rubik ttf-geist ttf-geist-mono-nerd bibata-cursor-theme awww matugen caelestia-shell caelestia-cli caelestia-sddm-locklike-git kora-icon-theme tela-circle-dracula-icon-theme 2>/dev/null || \
                 warn "Some AUR packages failed. Install manually."
             ;;
         dnf)
@@ -69,7 +69,7 @@ phase1_packages() {
                 network-manager-applet jetbrains-mono-fonts fira-code-fonts fontawesome-fonts
             )
             install_pkg "$pm" "${dnf_pkgs[@]}"
-            warn "Some deps (awww, matugen, quickshell) may not be in dnf. Install manually."
+            warn "Some deps (awww, matugen, caelestia) may not be in dnf. Install manually."
             ;;
     esac
 
@@ -146,6 +146,15 @@ phase2_shell() {
 phase3_link() {
     info "Linking config files..."
     bash "$REPO_DIR/scripts/link.sh"
+
+    # Enable background page-cache preloader and user session lingering
+    if command -v systemctl >/dev/null 2>&1; then
+        systemctl --user daemon-reload 2>/dev/null || true
+        systemctl --user enable shayar-preload.service 2>/dev/null || true
+    fi
+    if command -v loginctl >/dev/null 2>&1; then
+        loginctl enable-linger "$USER" 2>/dev/null || true
+    fi
 }
 
 # ---- phase 4: generate tokens ----

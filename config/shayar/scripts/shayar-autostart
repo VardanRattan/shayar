@@ -23,8 +23,6 @@ error() { echo -e "${RED}[ERROR]${NC} $1" >&2; }
 # Ensure that cache folder exists
 mkdir -p "$HOME/.cache"
 
-# Reset waybar state on boot (disabled flag should not persist across reboots)
-rm -f "$HOME/.config/shayar/settings/waybar-disabled"
 
 # Set Wallpaper
 mkdir -p "$CACHE_FOLDER"
@@ -45,20 +43,22 @@ if [ ! -f "$CACHE_FILE" ]; then
     fi
 fi
 
-# Start nmapplet
-command -v nm-applet &>/dev/null && nm-applet --indicator &
-
 [ -f "$HOME/.config/shayar/library.sh" ] && source "$HOME/.config/shayar/library.sh" || true
 
-# Apply wallpaper theming on every start.
-# Only the awww image set is skipped when already cached, to avoid a flicker.
+# Apply wallpaper theming on startup only if needed.
+# Skips heavy matugen & imagemagick regeneration if colors & blur are already cached.
 CURRENT_WP=$(cat "$CACHE_FILE")
+SCHEME_FILE="${HOME}/.local/state/caelestia/scheme.json"
+BLUR_FILE="${CACHE_FOLDER}/blurred_wallpaper.png"
+
 if [[ -z $(find "$AWWW_CACHE_FOLDER" -mindepth 1 -maxdepth 1 -type f 2>/dev/null | head -n 1) ]]; then
-    info "Set wallpaper to cache file $CURRENT_WP"
+    info "Cold start: applying wallpaper and theming for $CURRENT_WP"
     ~/.config/shayar/scripts/shayar-wallpaper "$CURRENT_WP" &
-else
-    info "awww cache present, applying theming only for $CURRENT_WP"
+elif [ ! -f "$SCHEME_FILE" ] || [ ! -f "$BLUR_FILE" ]; then
+    info "Missing color or blur cache, generating theming for $CURRENT_WP"
     ~/.config/shayar/scripts/shayar-wallpaper "$CURRENT_WP" --skip-wallpaper &
+else
+    info "Wallpaper and theming already cached; skipping redundant reprocessing"
 fi
 
 run_extensions "autostart"

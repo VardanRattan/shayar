@@ -5,8 +5,10 @@ local HOME = os.getenv("HOME")
 -- Applications
 hl.bind(mainMod .. " + RETURN", hl.dsp.exec_cmd(HOME .. "/.config/shayar/settings/terminal.sh"), { description = "Open the terminal" })
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd(HOME .. "/.config/shayar/settings/browser.sh"), { description = "Open the browser" })
-hl.bind(mainMod .. " + SHIFT + B", hl.dsp.exec_cmd(HOME .. "/.config/shayar/scripts/shayar-toggle-statusbar"), { description = "Toggle statusbar" })
+
+hl.bind(mainMod .. " + SHIFT + B", hl.dsp.global("caelestia:showall"), { description = "Toggle desktop panels" })
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(HOME .. "/.config/shayar/settings/filemanager"), { description = "Open the filemanager" })
+
 hl.bind(mainMod .. " + CTRL + E", hl.dsp.exec_cmd(HOME .. "/.config/shayar/settings/emojipicker.sh"), { description = "Open the emoji picker" })
 hl.bind(mainMod .. " + CTRL + c", hl.dsp.exec_cmd(HOME .. "/.config/shayar/settings/calculator.sh"), { description = "Open the calculator" })
 
@@ -30,18 +32,22 @@ hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true, descr
 
 -- Actions
 hl.bind("ALT + SPACE", hl.dsp.exec_cmd("shayar-menu"), { description = "Open unified settings menu" })
+hl.bind(mainMod .. " + I", hl.dsp.exec_cmd("qs -c caelestia ipc call nexus open"), { description = "Open Settings panel (Nexus)" })
 hl.bind(mainMod .. " + PRINT", hl.dsp.exec_cmd("shayar-screenshot"), { description = "Take a screenshot" })
 hl.bind("PRINT", hl.dsp.exec_cmd("grim -g \"$(slurp)\" - | GTK_THEME=Adwaita:dark swappy -f -"), { description = "Take an interactive screenshot with Swappy" })
-hl.bind(mainMod .. " + CTRL + RETURN", hl.dsp.exec_cmd(HOME .. "/.config/hypr/scripts/launcher.sh"), { description = "Open application launcher" })
+hl.bind("SUPER + SUPER_L", hl.dsp.global("caelestia:launcher"), { release = true, description = "Toggle application launcher" })
+hl.bind(mainMod .. " + CTRL + RETURN", hl.dsp.global("caelestia:launcher"), { description = "Open application launcher" })
 hl.bind(mainMod .. " + CTRL + K", hl.dsp.exec_cmd(HOME .. "/.config/hypr/scripts/keybindings.sh"), { description = "Show keybindings" })
 hl.bind(mainMod .. " + V", hl.dsp.exec_cmd(HOME .. "/.config/shayar/scripts/shayar-cliphist"), { description = "Open clipboard manager" })
 
+-- Caelestia Drawers & Controls
+hl.bind(mainMod .. " + CTRL + L", hl.dsp.global("caelestia:session"), { description = "Open session/power menu" })
+hl.bind(mainMod .. " + CTRL + W", hl.dsp.exec_cmd(HOME .. "/.config/shayar/bin/shayar-wallpaper"), { description = "Open wallpaper selector" })
+hl.bind(mainMod .. " + CTRL + N", hl.dsp.global("caelestia:utilities"), { description = "Network & utilities drawer" })
+hl.bind(mainMod .. " + CTRL + B", hl.dsp.global("caelestia:utilities"), { description = "Bluetooth & utilities drawer" })
+hl.bind(mainMod .. " + CTRL + D", hl.dsp.global("caelestia:dashboard"), { description = "Dashboard drawer" })
+hl.bind(mainMod .. " + SHIFT + L", hl.dsp.global("caelestia:lock"), { description = "Lock Screen" })
 
-hl.bind(mainMod .. " + CTRL + L", hl.dsp.exec_cmd(HOME .. "/.config/shayar/bin/shayar-power-toggle"), { description = "Open power menu" })
-hl.bind(mainMod .. " + CTRL + H", hl.dsp.exec_cmd(HOME .. "/.config/shayar/bin/shayar-welcome-toggle"), { description = "Open welcome screen" })
-hl.bind(mainMod .. " + CTRL + N", hl.dsp.exec_cmd(HOME .. "/.config/shayar/bin/shayar-net-toggle"),  { description = "Network applet" })
-hl.bind(mainMod .. " + CTRL + B", hl.dsp.exec_cmd(HOME .. "/.config/shayar/bin/shayar-bt-toggle"),   { description = "Bluetooth applet" })
-hl.bind(mainMod .. " + SHIFT + L", hl.dsp.exec_cmd(HOME .. "/.config/shayar/scripts/shayar-power -l"), { description = "Lock Screen directly" })
 
 -- Scratchpad
 hl.bind(mainMod .. " + S",         hl.dsp.workspace.toggle_special("magic"), { description = "Toggle special workspace magic" })
@@ -64,3 +70,9 @@ hl.bind("XF86AudioNext",  hl.dsp.exec_cmd("playerctl next"),       { locked = tr
 hl.bind("XF86AudioPause", hl.dsp.exec_cmd("playerctl play-pause"), { locked = true, description = "Pause audio" })
 hl.bind("XF86AudioPlay",  hl.dsp.exec_cmd("playerctl play-pause"), { locked = true, description = "Play audio" })
 hl.bind("XF86AudioPrev",  hl.dsp.exec_cmd("playerctl previous"),   { locked = true, description = "Previous track" })
+
+-- Laptop lid switch (turn display off on lid close, on when opened)
+hl.bind("switch:on:Lid Switch",  hl.dsp.exec_cmd("brightnessctl -s set 0"), { locked = true, description = "Turn off display on lid close" })
+hl.bind("switch:off:Lid Switch", hl.dsp.exec_cmd("brightnessctl -r"),  { locked = true, description = "Turn on display on lid open" })
+
+

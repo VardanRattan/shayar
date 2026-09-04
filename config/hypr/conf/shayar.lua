@@ -146,6 +146,7 @@ hl.env("HYPRCURSOR_SIZE", tostring(dt.typography.cursor_size))
 -- SDL version
 hl.env("SDL_VIDEODRIVER", "wayland")
 
+
 -- Force zero scaling for XWayland
 hl.config({
   xwayland = {
@@ -153,11 +154,10 @@ hl.config({
   }
 })
 
--- Blur Layer for Rofi
+-- Layer rules for Caelestia
 hl.config({
     layerrule = {
-        "blur, rofi",
-        "ignorealpha 0.5, rofi",
-        "ignorezero, rofi"
+        "animation fade, match:namespace:caelestia-(drawers|background)",
+        "noanim, match:namespace:caelestia-(border-exclusion|area-picker)"
     }
 })

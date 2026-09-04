@@ -2,13 +2,13 @@
 set -uo pipefail
 
 case "${1:-}" in
-    d)
-        cliphist list | rofi -dmenu -replace -config ~/.config/rofi/config-cliphist.rasi | cliphist delete || true
+    d|--delete)
+        caelestia clipboard -d
     ;;
-    w)    
+    w|--wipe)    
         cliphist wipe
     ;;
     *)
-        cliphist list | rofi -dmenu -replace -config ~/.config/rofi/config-cliphist.rasi | cliphist decode | wl-copy || true
+        caelestia clipboard
     ;;
 esac

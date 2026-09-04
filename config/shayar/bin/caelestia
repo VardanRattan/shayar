@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Caelestia CLI bridge for Shayar
+# Routes wallpaper calls from Caelestia UI to Shayar's wallpaper pipeline,
+# while delegating all other CLI commands to the upstream caelestia binary.
+
+if [[ "${1:-}" == "wallpaper" ]]; then
+    shift
+    case "${1:-}" in
+        -f|--file)
+            exec "${HOME}/.config/shayar/scripts/shayar-wallpaper" "$2"
+            ;;
+        -r|--random)
+            exec "${HOME}/.config/shayar/scripts/shayar-wallpaper" --random
+            ;;
+        -p|--preview)
+            # If preview is requested, run upstream if available or output scheme
+            if [ -x /usr/bin/caelestia ]; then
+                exec /usr/bin/caelestia wallpaper "$@"
+            else
+                cat "${HOME}/.local/state/caelestia/scheme.json" 2>/dev/null || true
+            fi
+            ;;
+        *)
+            if [[ -n "${1:-}" && -f "${1:-}" ]]; then
+                exec "${HOME}/.config/shayar/scripts/shayar-wallpaper" "$1"
+            else
+                exec "${HOME}/.config/shayar/scripts/shayar-wallpaper" "$@"
+            fi
+            ;;
+    esac
+fi
+
+# Fallback to upstream caelestia binary for shell, scheme, lock, etc.
+if [ -x /usr/bin/caelestia ]; then
+    exec /usr/bin/caelestia "$@"
+else
+    echo "caelestia CLI bridge: /usr/bin/caelestia not found. Install caelestia-cli." >&2
+    exit 1
+fi

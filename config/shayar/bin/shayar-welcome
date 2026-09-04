@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-QS_SHELL="${HOME}/.config/quickshell/shell.qml"
-[ -f "$HOME/.config/shayar/library.sh" ] && source "$HOME/.config/shayar/library.sh" || true
-ensure_qs
-
-qs -p "$QS_SHELL" ipc call welcome open

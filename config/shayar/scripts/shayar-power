@@ -2,9 +2,9 @@
 set -euo pipefail
 
 # 1. Define fallbacks as explicit functions to prevent quote-stripping issues
-lock_action()     { pidof hyprlock || hyprlock; }
+lock_action()     { qs -c caelestia ipc call lock lock; }
 suspend_action()  { systemctl suspend; }
-logout_action()   { hyprctl dispatch 'hl.dsp.exit()'; }
+logout_action()   { hyprctl dispatch exit; }
 reboot_action()   { systemctl reboot; }
 poweroff_action() { systemctl poweroff; }
 

@@ -1,12 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-QS_SHELL="${HOME}/.config/quickshell/shell.qml"
-[ -f "$HOME/.config/shayar/library.sh" ] && source "$HOME/.config/shayar/library.sh" || true
-ensure_qs
 
-POS=$("${HOME}/.config/shayar/bin/shayar-panel-pos" power)
-qs -p "$QS_SHELL" ipc call calendar close
-qs -p "$QS_SHELL" ipc call net close
-qs -p "$QS_SHELL" ipc call bt close
-qs -p "$QS_SHELL" ipc call vol close
-qs -p "$QS_SHELL" ipc call power toggle $POS
+if command -v qs >/dev/null 2>&1; then
+    qs -c caelestia ipc call drawers toggle session 2>/dev/null || caelestia shell -d
+fi

@@ -65,13 +65,19 @@ get_wallpaper() {
     echo "$wp"
 }
 
+CAELESTIA_SCHEME="${HOME}/.local/state/caelestia/scheme.json"
 QUICKSHELL_COLORS="${HOME}/.config/shayar/colors/quickshell.json"
 
 # --- Extract color from dynamic matugen colors or shayar.json ---
 get_color() {
     local key="$1"
     local color=""
-    if [ -f "$QUICKSHELL_COLORS" ]; then
+    if [ -f "$CAELESTIA_SCHEME" ]; then
+        local stripped
+        stripped=$(jq -r ".colours.${key} // empty" "$CAELESTIA_SCHEME" 2>/dev/null)
+        [ -n "$stripped" ] && color="#${stripped}"
+    fi
+    if [ -z "$color" ] && [ -f "$QUICKSHELL_COLORS" ]; then
         color=$(jq -r ".${key} // empty" "$QUICKSHELL_COLORS" 2>/dev/null)
     fi
     if [ -z "$color" ]; then

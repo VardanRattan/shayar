@@ -131,22 +131,7 @@ def generate_quickshell_tokens(tokens, out_dir):
     with open(out_path, "w") as f:
         json.dump(qs, f, indent=4)
     print(f"Generated: {out_path}")
-
-def generate_rofi_font(tokens, out_dir):
-    out_path = os.path.join(out_dir, "design-tokens-rofi-font.rasi")
-    typo = tokens.get("typography", {})
-    rofi_font = typo.get("rofi_font", "")
-    icon_theme = typo.get("icon_theme", "")
-    with open(out_path, "w") as f:
-        f.write("/* Generated from design-tokens.json -- DO NOT EDIT */\n")
-        f.write("configuration {\n")
-        f.write(f'    font: "{rofi_font}";\n')
-        f.write(f'    icon-theme: "{icon_theme}";\n')
-        f.write("}\n")
-    print(f"Generated: {out_path}")
-
 def get_sorted_replacements(tokens):
-    # Flatten environment style tokens
     env_tokens = {}
     def flatten(d, prefix="DT_"):
         for k, v in d.items():
@@ -157,7 +142,6 @@ def get_sorted_replacements(tokens):
                 env_tokens[path] = str(v)
     flatten(tokens)
     
-    # Sort replacements by key length descending to prevent substring collisions
     sorted_reps = sorted(env_tokens.items(), key=lambda x: len(x[0]), reverse=True)
     return sorted_reps
 
@@ -170,7 +154,6 @@ def apply_replacements(content, sorted_reps):
             color_reps.append((f"@{color_name}", v))
         dt_reps.append((f"@{k}@", v))
     
-    # Sort color_reps by key length descending so @tertiary-container is replaced before @tertiary
     color_reps.sort(key=lambda x: len(x[0]), reverse=True)
     
     for token, val in color_reps:
@@ -200,36 +183,26 @@ def generate_fastfetch(tokens, out_dir):
         f.write(resolved)
     print(f"Generated: {dst}")
 
-def generate_waybar_css(tokens, out_dir):
-    home = os.environ.get("HOME", "")
-    config_home = os.environ.get("XDG_CONFIG_HOME", os.path.join(home, ".config"))
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    src = os.path.join(script_dir, "..", "themes", "waybar-style.css")
-    if not os.path.exists(src):
-        src = os.path.join(config_home, "shayar", "themes", "waybar-style.css")
+def generate_gtk_ini(tokens, out_dir):
+    out_path = os.path.join(out_dir, "design-tokens-gtk.ini")
+    typo = tokens.get("typography", {})
+    ui_font = f"{typo.get('ui_family', 'Geist')} {typo.get('ui_size', 11)}"
+    icon_theme = typo.get("icon_theme", "Tela-circle-dracula")
+    cursor_theme = typo.get("cursor_theme", "Bibata-Modern-Ice")
+    cursor_size = typo.get("cursor_size", 24)
     
-    dst = os.path.join(out_dir, "waybar-style.css")
-    reps = get_sorted_replacements(tokens)
-    
-    if os.path.exists(src):
-        with open(src, "r") as f:
-            content = f.read()
-        resolved = apply_replacements(content, reps)
-        with open(dst, "w") as f:
-            f.write(resolved)
-        print(f"Generated: {dst}")
-        
-    # Swaync CSS generation
-    for component in ["notifications", "control_center"]:
-        sway_src = os.path.join(config_home, "swaync", "themes", "glass", f"{component}.template.css")
-        sway_dst = os.path.join(out_dir, f"swaync-{component}.css")
-        if os.path.exists(sway_src):
-            with open(sway_src, "r") as f:
-                content = f.read()
-            resolved = apply_replacements(content, reps)
-            with open(sway_dst, "w") as f:
-                f.write(resolved)
-            print(f"Generated: {sway_dst}")
+    content = f"""# Generated from design-tokens.json -- DO NOT EDIT
+[Settings]
+gtk-theme-name = Adwaita-dark
+gtk-icon-theme-name = {icon_theme}
+gtk-cursor-theme-name = {cursor_theme}
+gtk-cursor-theme-size = {cursor_size}
+gtk-font-name = {ui_font}
+gtk-application-prefer-dark-theme = true
+"""
+    with open(out_path, "w") as f:
+        f.write(content)
+    print(f"Generated: {out_path}")
 
 def main():
     home = os.environ.get("HOME", "")
@@ -257,9 +230,8 @@ def main():
     generate_env(tokens, out_dir)
     generate_shayar_json(tokens, out_dir)
     generate_quickshell_tokens(tokens, out_dir)
-    generate_rofi_font(tokens, out_dir)
     generate_fastfetch(tokens, out_dir)
-    generate_waybar_css(tokens, out_dir)
+    generate_gtk_ini(tokens, out_dir)
 
 if __name__ == "__main__":
     main()

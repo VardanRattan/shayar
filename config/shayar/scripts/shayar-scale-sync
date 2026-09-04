@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Dynamic HiDPI scaling propagation
+monitors_json=$(hyprctl monitors -j 2>/dev/null || true)
+[ -z "$monitors_json" ] && exit 0
+
+scale=$(echo "$monitors_json" | jq -r '(.[] | select(.focused == true).scale) // .[0].scale // 1' 2>/dev/null || echo 1)
+
+if command -v bc >/dev/null 2>&1 && [ "$(echo "$scale > 1.0" | bc -l 2>/dev/null || echo 0)" = "1" ]; then
+    scale_int=$(printf "%.0f" "$scale")
+    hyprctl setenv GDK_SCALE "$scale_int" >/dev/null 2>&1 || true
+    hyprctl setenv QT_SCALE_FACTOR "$scale" >/dev/null 2>&1 || true
+    dbus-update-activation-environment --systemd GDK_SCALE QT_SCALE_FACTOR >/dev/null 2>&1 || true
+fi

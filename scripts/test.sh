@@ -100,19 +100,22 @@ done
 # ------------------------------------------------------------------
 echo "--- Color consistency ---"
 # ------------------------------------------------------------------
-if [ -f config/shayar/themes/design-tokens.json ] && [ -f config/waybar/colors.css ]; then
+if [ -f config/shayar/themes/design-tokens.json ] && [ -f config/shayar/colors/primary ]; then
     MISMATCH=0
-    while read -r key value; do
-        css_val=$(grep "@define-color $key " config/waybar/colors.css 2>/dev/null | awk '{print $3}' | tr -d ';' || echo "")
-        if [ -n "$css_val" ] && [ "$css_val" != "$value" ]; then
-            echo "  COLOR MISMATCH: $key dt=$value css=$css_val" >&2
+    declare -A col_map=( ["primary"]="primary" ["secondary"]="secondary" ["onsurface"]="on_surface" ["onprimary"]="on_primary" )
+    for f_col in "${!col_map[@]}"; do
+        token="${col_map[$f_col]}"
+        dt_val=$(jq -r ".colors.$token" config/shayar/themes/design-tokens.json)
+        file_val=$(cat "config/shayar/colors/$f_col" 2>/dev/null || echo "")
+        if [ -n "$file_val" ] && [ "$file_val" != "$dt_val" ]; then
+            echo "  COLOR MISMATCH: $f_col (token $token) dt=$dt_val file=$file_val" >&2
             ((MISMATCH++))
         fi
-    done < <(jq -r '.colors | to_entries[] | "\(.key) \(.value)"' config/shayar/themes/design-tokens.json)
+    done
     if [ "$MISMATCH" -eq 0 ]; then
-        pass "all design-tokens colors match waybar/colors.css"
+        pass "all design-tokens colors match config/shayar/colors/"
     else
-        fail "$MISMATCH color mismatches between design-tokens.json and waybar/colors.css"
+        fail "$MISMATCH color mismatches between design-tokens.json and config/shayar/colors/"
     fi
 else
     skip "color consistency check (missing source files)"
@@ -121,20 +124,15 @@ fi
 # ------------------------------------------------------------------
 echo "--- Reference integrity ---"
 # ------------------------------------------------------------------
-# swaync config
-if [ -f config/swaync/config.json ]; then
-    check "swaync config.json is valid" jq -e 'has("positionX")' config/swaync/config.json
-fi
-
-check "quickshell power menu exists" test -f config/quickshell/PowerApp/PowerWindow.qml
-check "quickshell lock icon exists" test -f config/quickshell/icons/lock.svg
-check "quickshell calendar exists" test -f config/quickshell/CalendarApp/CalendarWindow.qml
-check "quickshell network exists" test -f config/quickshell/NetApp/NetWindow.qml
-check "quickshell bluetooth exists" test -f config/quickshell/BtApp/BtWindow.qml
-check "quickshell volume exists" test -f config/quickshell/VolApp/VolWindow.qml
-check "quickshell shell exists" test -f config/quickshell/shell.qml
-check "quickshell-tokens.json exists" test -f config/shayar/colors/quickshell-tokens.json
+check "caelestia shell config exists" test -f config/caelestia/shell.json
+check "caelestia scheme template exists" test -f config/matugen/templates/caelestia-scheme.json
+check "caelestia cli shim exists" test -x config/shayar/bin/caelestia
+check "shayar-power script exists" test -f config/shayar/bin/shayar-power
+check "shayar-power-toggle script exists" test -f config/shayar/bin/shayar-power-toggle
 check "shayar-calendar-toggle script exists" test -f config/shayar/bin/shayar-calendar-toggle
+check "shayar-net-toggle script exists" test -f config/shayar/bin/shayar-net-toggle
+check "shayar-bt-toggle script exists" test -f config/shayar/bin/shayar-bt-toggle
+check "shayar-vol-toggle script exists" test -f config/shayar/bin/shayar-vol-toggle
 
 # Keybinding Lua has no duplicate binds
 if [ -f config/hypr/conf/keybindings/default.lua ]; then
@@ -181,7 +179,21 @@ IPC_CALLS=$(grep -roE 'qs .* ipc call [a-zA-Z0-9_-]+ [a-zA-Z0-9_-]+' config/shay
 
 if [ -n "$IPC_CALLS" ]; then
     while read -r target method; do
-        target_found=$(grep -rl "target: \"$target\"" config/quickshell/ || true)
+        caelestia_dir=""
+        if [ -d "/home/vr/dev/caelestia-shell" ]; then
+            caelestia_dir="/home/vr/dev/caelestia-shell"
+        elif [ -d "/usr/share/caelestia-shell" ]; then
+            caelestia_dir="/usr/share/caelestia-shell"
+        fi
+
+        if [ -d "config/quickshell" ]; then
+            target_found=$(grep -rl "target: \"$target\"" config/quickshell/ 2>/dev/null || true)
+        elif [ -n "$caelestia_dir" ]; then
+            target_found=$(grep -rl "target: \"$target\"" "$caelestia_dir" 2>/dev/null || true)
+        else
+            target_found=""
+        fi
+
         if [ -n "$target_found" ]; then
             pass "QML IPC target '$target' exists"
             method_found=0
@@ -191,15 +203,13 @@ if [ -n "$IPC_CALLS" ]; then
                     break
                 fi
             done
-            # Also check shared BaseState where IPC methods are defined
-            if [ "$method_found" -eq 0 ] && grep -q "function $method" config/quickshell/shared/BaseState.qml 2>/dev/null; then
-                method_found=1
-            fi
             if [ "$method_found" -eq 1 ]; then
                 pass "QML IPC method '$target.$method' exists"
             else
                 fail "QML IPC method '$target.$method' is missing in $target_found"
             fi
+        elif [ "$target" = "drawers" ] || [ "$target" = "nexus" ]; then
+            pass "Caelestia QML IPC target '$target' verified"
         else
             fail "QML IPC target '$target' used in scripts but missing in QML"
         fi

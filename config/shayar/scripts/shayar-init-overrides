@@ -24,7 +24,6 @@ FILES=(
     hypr/conf/decorations/default.lua
     hypr/conf/animations/default.lua
     hypr/conf/workspaces/default.lua
-    waybar/themes/shayar/config
 )
 
 for f in "${FILES[@]}"; do

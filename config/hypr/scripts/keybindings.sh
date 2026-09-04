@@ -36,6 +36,5 @@ BEGIN {
         combo = (mods != "" ? mods : key)
     }
 
-    # Output: Line 1 (Keys), Line 2 (Description), followed by the Null separator
-    printf "%s\n➔ %s\0", combo, desc
-}' | rofi -dmenu -i -replace -p "Keybinds" -sep '\0' -eh 2 -config ~/.config/rofi/config-compact.rasi
+    printf "%-30s ➔ %s\n", combo, desc
+}' | fuzzel --dmenu -p "Keybinds > "

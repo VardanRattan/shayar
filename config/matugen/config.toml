@@ -14,13 +14,6 @@ input_path = '~/.config/matugen/templates/hyprland-colors.lua'
 output_path = '~/.config/hypr/colors.lua'
 post_hook = 'hyprctl reload'
 
-[templates.waybar]
-input_path = '~/.config/matugen/templates/colors.css'
-output_path = '~/.config/waybar/colors.css'
-
-[templates.rofi]
-input_path = '~/.config/matugen/templates/rofi-colors.rasi'
-output_path = '~/.config/rofi/colors.rasi'
 
 [templates.gtk3]
 input_path = '~/.config/matugen/templates/gtk-colors.css'
@@ -29,10 +22,6 @@ output_path = '~/.config/gtk-3.0/colors.css'
 [templates.gtk4]
 input_path = '~/.config/matugen/templates/gtk-colors.css'
 output_path = '~/.config/gtk-4.0/colors.css'
-
-[templates.swaync]
-input_path = '~/.config/matugen/templates/colors.css'
-output_path = '~/.config/swaync/colors.css'
 
 [templates.primary]
 input_path = '~/.config/matugen/templates/primary'
@@ -50,7 +39,7 @@ output_path = '~/.config/shayar/colors/onsurface'
 input_path = '~/.config/matugen/templates/onprimary'
 output_path = '~/.config/shayar/colors/onprimary'
 
-[templates.quickshell]
-input_path = '~/.config/matugen/templates/quickshell-colors.json'
-output_path = '~/.config/shayar/colors/quickshell.json'
-post_hook = 'pkill -USR2 qs 2>/dev/null || true'
+[templates.caelestia]
+input_path = '~/.config/matugen/templates/caelestia-scheme.json'
+output_path = '~/.local/state/caelestia/scheme.json'
+

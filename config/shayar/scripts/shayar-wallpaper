@@ -101,29 +101,18 @@ run_matugen() {
     local matugen_args=()
     [ -n "${MATUGEN_MODE:-}" ] && matugen_args+=("-m" "$MATUGEN_MODE")
     [ -n "${MATUGEN_SCHEME:-}" ] && matugen_args+=("-t" "$MATUGEN_SCHEME")
+    matugen_args+=("--source-color-index" "0")
 
     info "Running matugen using wallpaper"
     "$bin" image "$IMAGE_PATH" "${matugen_args[@]}" || { warn "matugen failed, keeping previous colors"; return 0; }
     info "Matugen updated"
 }
 
-reload_waybar() {
-    nohup bash -c "$HOME/.config/waybar/launch.sh" >/dev/null 2>&1 &
-    disown
-    info "Waybar reloaded"
-}
-
-reload_swaync() {
-    swaync-client -rs
-    info "SwayNC refreshed"
-}
-
 reload_quickshell() {
-    if pgrep -x qs >/dev/null; then
-        qs -p "$HOME/.config/quickshell/shell.qml" ipc call theme-manager reload 2>/dev/null || true
-        info "Quickshell theme reloaded"
-    fi
+    # Caelestia shell watches scheme.json and path.txt automatically via FileView
+    info "Caelestia state updated"
 }
+
 
 reload_sddm() {
     command -v sddm-greeter-qt6 &>/dev/null || command -v sddm &>/dev/null || return 0
@@ -216,7 +205,10 @@ fi
 
 mkdir -p "$CACHE_FOLDER"
 echo "$IMAGE_PATH" > "$CACHE_FILE"
+mkdir -p "${HOME}/.local/state/caelestia/wallpaper"
+echo "$IMAGE_PATH" > "${HOME}/.local/state/caelestia/wallpaper/path.txt"
 info "Cache updated: $IMAGE_PATH"
+
 
 # ============================================================
 # Main
@@ -229,8 +221,6 @@ if [ "$SKIP_THEMING" = true ]; then
 else
     run_matugen
     run_extensions "matugen-complete"
-    reload_waybar
-    reload_swaync
     reload_quickshell
     run_extensions "post-reload"
     generate_image_variants &

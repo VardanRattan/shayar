@@ -84,8 +84,8 @@ if command -v flatpak >/dev/null 2>&1; then
     echo
 fi
 
-# Reload Waybar
-pkill -RTMIN+1 waybar
+# Reload status bar if running
+pkill -RTMIN+1 waybar 2>/dev/null || true
 
 
 

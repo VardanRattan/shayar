@@ -1,0 +1,55 @@
+{
+    "appearance": {
+        "transparency": {
+            "enabled": true
+        }
+    },
+    "bar": {
+        "persistent": true
+    },
+    "general": {
+        "apps": {
+            "terminal": [
+                "kitty"
+            ]
+        },
+        "battery": {
+            "criticalLevel": 0
+        },
+        "idle": {
+            "inhibitWhenAudio": true,
+            "inhibitWhenCharging": false,
+            "lockBeforeSleep": false,
+            "timeouts": [
+            ]
+        },
+        "logo": "~/.config/shayar/assets/shayar.svg"
+    },
+    "paths": {
+        "wallpaperDir": "~/.config/shayar/wallpapers"
+    },
+    "services": {
+        "smartScheme": false
+    },
+    "session": {
+        "commands": {
+            "hibernate": [
+                "shayar-power",
+                "-h"
+            ],
+            "logout": [
+                "shayar-power",
+                "-e"
+            ],
+            "reboot": [
+                "shayar-power",
+                "-r"
+            ],
+            "shutdown": [
+                "shayar-power",
+                "-p"
+            ]
+        },
+        "enabled": true
+    }
+}

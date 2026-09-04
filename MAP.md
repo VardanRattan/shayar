@@ -24,45 +24,50 @@ The listener process manager. One background listener ships out of the box:
 
 Commands: `--startall`, `--stopall`, `--restartall`, or target a specific listener by name. Uses `nohup` and checks for duplicates with `pgrep`.
 
-### `shayar.conf`
-Consolidated settings file. Replaced all individual value files. 25 lines with `<KEY>="<VALUE>"` format. Scripts source it directly. Encapsulated settings:
+#### `shayar.conf`
+Consolidated settings file. Replaced all individual value files. 24 lines with `<KEY>="<VALUE>"` format. Scripts source it directly. Encapsulated settings:
 
 | Variable | Default | What it does |
 |----------|---------|-------------|
 | `TERMINAL` | `kitty` | Default terminal emulator |
 | `BROWSER` | `firefox` | Default browser |
-| `FILE_MANAGER` | `yazi` | Default file manager |
-| `WALLPAPER_FOLDER` | `$HOME/Wallpaper` | Custom wallpaper directory |
-| `WALLPAPER_EFFECT` | `off` | Active wallpaper effect |
-| `WALLPAPER_AUTOMATION` | -- | Auto-rotation interval in seconds |
-| `SCREENSHOT_FOLDER` | `$HOME/Pictures/Screenshots` | Where screenshots save |
-| `WAYBAR_THEME` | `/shayar;/shayar/default` | Active Waybar theme |
-| `SCREEN_LOCKER` | `hyprlock` | Lock screen command |
-| `BLUR_AMOUNT` | `50x30` | Lock screen blur amount |
+| `FILE_MANAGER` | `nautilus --new-window` | Default file manager |
+| `CALCULATOR` | `flatpak run org.gnome.Calculator` | Default calculator application |
+| `EMOJI_PICKER` | `flatpak run com.tomjwatson.Emote` | Default emoji picker |
+| `SYSTEM_MONITOR` | `missioncenter` | Default system monitor |
+| `BLUETOOTH_MANAGER` | `blueman-manager` | Default bluetooth manager |
+| `WALLPAPER_FOLDER` | `${HOME}/.config/shayar/wallpapers` | Custom wallpaper directory |
+| `WALLPAPER_TRANSITION` | `simple` | awww wallpaper transition effect |
+| `BLUR` | `50x30` | Lock screen blur amount |
+| `SCREENSHOT_FOLDER` | `${HOME}/Pictures` | Where screenshots save |
+| `SCREENSHOT_FILENAME` | `screenshot_$(date +%Y%m%d_%H%M%S).jpg` | Screenshot naming pattern |
 
-Executable wrappers in `config/shayar/settings/` (`terminal.sh`, `browser.sh`, `filemanager.sh`, `network-manager.sh`, `launcher.sh`, `emoji-picker.sh`, `calculator.sh`) source `shayar.conf` and fall back to defaults if it's missing.
+Executable wrappers in `config/shayar/settings/` (`terminal.sh`, `browser.sh`, `filemanager`, `networkmanager.sh`, `emojipicker.sh`, `calculator.sh`, `calendar.sh`, `systemmonitor`) source `shayar.conf` and fall back to defaults if it's missing.
 
 ### `themes/`
-Only the glass theme ships with Shayar. Contains three files:
+Only the glass theme ships with Shayar. Contains:
 
-- **`shayar.json`** — Static Material Design 3 palette (source for matugen color generation).
-- **`shayar-palette.yaml`** — YAML version named "Komorebi Ink".
-- **`design-tokens.json`** — Single source of truth for **all** visual values: colors, typography, spacing, opacity, animation, shadows. Every hardcoded visual value should originate here. See "Design Tokens" below.
+- **`shayar.json`** — Material Design 3 palette (source for matugen color generation).
+- **`design-tokens.json`** — Single source of truth for **all** visual values: colors, typography, spacing, opacity, animation, kitty, quickshell (218 tokens across 7 sections). Every hardcoded visual value originates here.
 
 ### Generated token files (from `design-tokens.json`):
 
 | File | Format | Used By |
 |------|--------|---------|
-| `design-tokens.css` | `@define-color dt-*` | waybar, swaync |
-| `quickshell.json` (matugen) | hex JSON | Quickshell power menu |
+| `design-tokens.css` | `@define-color dt-*` | GTK and desktop styling |
 | `design-tokens.lua` | `dt.*` Lua table | hyprland `*.lua` configs |
-| `design-tokens.rasi` | `dt-*` variables | rofi `*.rasi` configs |
+| `design-tokens.rasi` | `dt-*` variables | rasi styling |
 | `design-tokens.env` | `DT_*` env vars | bash scripts via `source` |
+| `design-tokens-hyprlock.conf` | `$dt-*` variables | hyprlock lockscreen |
+| `design-tokens-kitty.conf` | kitty config directives | kitty terminal |
+| `shayar.json` | hex JSON palette | matugen color engine |
+| `quickshell-tokens.json` | JSON tokens | Quickshell singleton |
+| `fastfetch.jsonc` | JSONC config | fastfetch system info |
 
-Run `shayar-design-tokens generate` after changing `design-tokens.json` to regenerate all seven format outputs.
+Run `shayar-design-tokens generate` after changing `design-tokens.json` to regenerate all format outputs.
 
 ### Design tokens philosophy
-Colors come from `shayar.json` → matugen → per-component `colors.*` files (colors.css, colors.lua, colors.conf, colors.rasi). The design-tokens.json mirrors the color palette for reference and adds every other visual value: spacing, rounding, gaps, font sizes, animation speeds, opacities, shadows, and window dimensions. Component configs reference these generated files instead of hardcoding values.
+Colors come from `shayar.json` → matugen → per-component `colors.*` files (colors.css, colors.lua, colors.conf, colors.rasi). The `design-tokens.json` mirrors the color palette for reference and defines every other visual value: spacing, rounding, gaps, font sizes, animation speeds, opacities, shadows, and window dimensions. Component configs reference these generated files instead of hardcoding values.
 
 **Already migrated:**
 
@@ -71,24 +76,23 @@ Colors come from `shayar.json` → matugen → per-component `colors.*` files (c
 | Hyprland decorations | `dt.spacing.*`, `dt.opacity.*` | rounding, gaps, blur, shadow, opacity |
 | Hyprland windows | `dt.spacing.*` | gaps_in, gaps_out, border_size |
 | Hyprland animations | `dt.animation.*` | all bezier curves + speeds |
-| Waybar style.css | colors.css + `alpha()` | all hex/rgba colors → `@color-name` + alpha |
-| SwayNC CSS | colors.css + `alpha()` | hardcoded black/white/red → `@scrim`/`@error`/`@primary` |
-| Wlogout CSS | colors.css | `@foreground` → `@on_surface` |
-| volume-slider.sh | `design-tokens.env` | position, size, colors |
-
-**Not yet migrated** (still hardcoded, documented in design-tokens.json): hyprlock.conf sizing, kitty.conf font/size, GTK settings.ini theme names, Pango markup colors in waybar config, SVG asset colors. These require per-format generators (hyprlock.conf, kitty.conf, SVG) that can be added later.
+| Hyprlock lockscreen | `design-tokens-hyprlock.conf` | sizes, dots, rounding, positions, shadow |
+| Kitty terminal | `design-tokens-kitty.conf` | font, size, window dims, padding, scrollback |
+| GTK styling | `gtk.css`, `colors.css` | Material You dynamic theme colors |
+| Caelestia Shell | `shell.json`, `scheme.json` | dynamic tokens, palette, logo, and drawer configurations |
+| SDDM lockscreen | `sddm-theme.conf` | tokens, avatar, blur, and color variables |
 
 ### `colors/`
-Matugen output. The primary color `#acc7ff` drives the whole palette. Files: `primary`, `secondary`, `onsurface`, `onprimary`. Other scripts source these for hardcoded color references.
+Matugen output. The primary color `#acc7ff` drives the whole palette. Files: `primary`, `secondary`, `onsurface`, `onprimary`. Other scripts source these for dynamic color references.
 
 ### `assets/`
-Branding. `shayar-logo.png`, `shayar-logo.svg`, `shayar.svg`. The logo is a geometric V-shape.
+Branding. `shayar-logo.png`, `shayar.svg`. The official mark is the **Geometric Quill "V"** — an aerodynamic fountain-pen nib converging into a "V" with a floating celestial star (*nuqta*), symbolizing poetry, precision, and velocity. Rendered in vector SVG and high-res PNG.
 
 ### `wallpapers/`
-Default wallpapers. `default.png` is the only fallback wallpaper.
+Default wallpapers. `default.png` is the shipped default wallpaper.
 
 ### `bin/`
-18 CLI tools available system-wide after symlinking:
+19 CLI tools and extension symlinks available system-wide after linking:
 
 - **`shayar-apps`** -- Scans `/usr/share/applications` and `~/.local/share/applications` for `.desktop` files. Handles Flatpak apps. Feeds them to fzf. Icons: `󰀻 ` for system apps, `󰏖 ` for Flatpak.
 - **`shayar-finder`** -- Traverses directories up to 4 levels deep. Returns `TYPE_DIR:` or `TYPE_FILE:` prefixes for shell integration.
@@ -96,35 +100,40 @@ Default wallpapers. `default.png` is the only fallback wallpaper.
 - **`shayar-screenshot`** -- Wraps `grim`/`slurp`. Supports fullscreen, area selection, and window selection. Delay options: 0s, 2s, 5s, 10s. Copies to clipboard via `wl-copy`. Saves to the folder specified by `SCREENSHOT_FOLDER` in `shayar.conf`.
 - **`shayar-wallpaper`** -- Fzf wallpaper picker. Reads the wallpaper directory from `WALLPAPER_FOLDER` in `shayar.conf`. Filters to jpg/jpeg/png/webp/gif.
 - **`shayar-menu`** -- Unified settings menu (rofi). Supports extension menu items.
-- **`shayar-power-toggle`** — Power menu (Quickshell). Closes other 4 panels.
-- **`shayar-calendar-toggle`** — Calendar panel (Quickshell). Closes other 4 panels.
-- **`shayar-net-toggle`** — Network panel (Quickshell). Closes other 4 panels.
-- **`shayar-bt-toggle`** — Bluetooth panel (Quickshell). Closes other 4 panels.
-- **`shayar-vol-toggle`** — Volume panel (Quickshell). Closes other 4 panels.
-- **`shayar-panel-pos`** — Calculates approximate Waybar icon positions from CSS values and screen resolution. Used by toggle scripts for icon-relative panel placement.
+- **`caelestia`** — CLI bridge shim routing wallpaper commands to `shayar-wallpaper` and passing other subcommands to `/usr/bin/caelestia`.
+- **`shayar-power-toggle`** — Power / Session menu (Caelestia session drawer).
+- **`shayar-calendar-toggle`** — Calendar / Dashboard (Caelestia dashboard drawer).
+- **`shayar-net-toggle`** — Network & quick controls (Caelestia utilities drawer).
+- **`shayar-bt-toggle`** — Bluetooth & quick controls (Caelestia utilities drawer).
+- **`shayar-vol-toggle`** — Audio OSD pill (Caelestia osd drawer).
+- **`shayar-vol-scroll`** — Smooth volume scroll helper with safety clamping.
+- **`shayar-brightness-get`** — Direct sysfs backlight reader for brightness controls.
 - **`shayar-sddm-sync`** — Syncs current wallpaper and matugen colors to SDDM login screen. Requires `--install` first, then run after wallpaper changes. Requires sudo.
-- **`shayar-welcome-toggle`** — Welcome screen (Quickshell). Closes other 5 panels.
-- **`shayar-welcome`** — Opens the welcome screen (Quickshell).
 - **`shayar-wifi-popup`** — WiFi popup (legacy).
+- **`hypridle-inhibitor`** — Symlink to extension script for toggling idle inhibition.
 
 ### `scripts/`
-13 scripts. Grouped by function:
+14 scripts. Grouped by function:
+
+**Core & Design Tokens:**
+- `design_tokens.py` -- Python compiler generating 10 configuration formats from `design-tokens.json`.
+- `shayar-design-tokens` -- CLI wrapper for `design_tokens.py` (`generate`, `validate`, `--with-colors`).
+- `shayar-apply-theme` -- Reads theme manifest `themed.lst` and activates themes.
+- `shayar-init-overrides` -- Scaffolds user override skeleton in `~/.config/overrides/`.
 
 **Wallpaper pipeline:**
-- `shayar-wallpaper` -- The main wallpaper engine. Full pipeline: validate image, cache path, apply effects, wait for awww-daemon, set wallpaper via `awww img`, run matugen, reload waybar/swaync, generate blurred wallpaper for lockscreen, create rofi rasi file. Flags: `--random`, `--effect`, `--monitor`, `--skip-wallpaper`, `--skip-theming`, `--crop-gravity`.
-- `shayar-autostart` -- Main startup orchestrator. Creates cache folder, starts nm-applet, applies wallpaper theming.
+- `shayar-wallpaper` -- The main wallpaper engine. Full pipeline: validate image, cache path, apply effects, wait for awww-daemon, set wallpaper via `awww img`, run matugen, sync Caelestia Shell palette (`scheme.json`), and generate blurred wallpaper for lockscreen. Flags: `--random`, `--effect`, `--monitor`, `--skip-wallpaper`, `--skip-theming`, `--crop-gravity`.
+- `shayar-autostart` -- Main startup orchestrator. Creates cache folder, applies wallpaper theming.
 
 **Toggles:**
-
-- `shayar-toggle-statusbar` -- Toggles waybar on/off.
-- `shayar-toggle-nmapplet` -- Start/stop NetworkManager applet.
+- `shayar-toggle-statusbar` -- Toggles Caelestia status bar via IPC (`drawers toggle bar`).
 - `shayar-toggle-scratchpad-window` -- Moves active window to/from the `special:magic` workspace.
 
 **System tools:**
-- `shayar-power` -- Power management capsule. Options: `--lock`, `--suspend`, `--logout`, `--reboot`, `--poweroff`. Overrides with hyprshutdown if available.
+- `shayar-power` -- Power management capsule. Options: `--lock`, `--suspend`, `--logout`, `--reboot`, `--poweroff`. Calls Caelestia lock IPC with clean session handlers.
 - `shayar-network` -- Starts NetworkManager if needed, opens nmtui.
 - `shayar-notification-handler` -- Wrapper around `notify-send` with standardized options.
-- `shayar-cliphist` -- Clipboard manager. Uses rofi. Modes: list, delete, wipe.
+- `shayar-cliphist` -- Clipboard manager leveraging `caelestia clipboard`. Modes: list, delete, wipe.
 
 **Installation and updates:**
 - `shayar-install-system-updates` -- Full system update. Supports Arch (yay/paru) and Fedora (dnf). Also updates Flatpak. Uses `gum` for colored output.
@@ -166,13 +175,13 @@ Startup sequence on `hyprland.start`:
 2. Restart xdg-desktop-portal
 3. Start awww-daemon (wallpaper daemon)
 4. Set cursor theme
-5. Start all listeners
-6. Start polkit agent
-7. Run `shayar-autostart` (wallpaper + nm-applet + waybar)
-8. Run `gtk.sh` (GTK settings)
-9. Start SwayNC
+5. Dynamic HiDPI scale detection and environment propagation (`GDK_SCALE`, `QT_SCALE_FACTOR`)
+6. Start all listeners
+7. Start polkit agent
+8. Run `shayar-autostart` (wallpaper + nm-applet, sets `waybar-disabled`)
+9. Run `gtk.sh` (GTK settings)
 10. Start hypridle
-11. Start Quickshell
+11. Start Caelestia Shell (`caelestia shell -d`)
 12. Load cliphist history
 
 ### `conf/shayar.lua`
@@ -186,13 +195,13 @@ Shayar-specific configuration:
 Material Design 3 color variables in Hyprland format. Primary: `#acc7ff`. Used by lock screen, decorations, and borders.
 
 ### `hyprlock.conf`
-Lock screen:
+Lock screen (fully tokenized via `design-tokens-hyprlock.conf`):
 - Background: blurred wallpaper from cache
-- Input field: 200x50, primary color, rounded, password dots
-- Clock: 70px, bottom-right
-- User label: 20px, above clock
-- Image: Square wallpaper preview, 280px, 40px rounding, border
-- All colors pulled from `colors.conf`
+- Input field: primary color, rounded, password dots, tokenized dimensions
+- Clock: bottom-right, tokenized font size
+- User label: above clock
+- Image: Square wallpaper preview with rounded borders
+- All colors pulled from `colors.conf` and tokens from `design-tokens-hyprlock.conf`
 
 ### `hypridle.conf`
 Idle management:
@@ -205,7 +214,7 @@ Idle management:
 Preloads `blank.png` as placeholder. Splash disabled. awww-daemon handles the actual wallpaper.
 
 ### `monitors.lua`
-Default monitor: preferred mode, auto position, scale 1.
+Default monitor: preferred mode, auto position, scale 1. Dynamic scaling is calculated on startup in `autostart.lua`.
 
 ### `input.lua`
 - Keyboard: US layout, `grp:alt_shift_toggle`
@@ -227,9 +236,10 @@ Main modifier: SUPER.
 |-----|--------|
 | `SUPER+Return` | Terminal |
 | `SUPER+B` | Browser |
+| `SUPER+SHIFT+B` | Toggle statusbar |
 | `SUPER+E` | File manager |
 | `SUPER+CTRL+E` | Emoji picker |
-| `SUPER+CTRL+C` | Calculator / Calendar |
+| `SUPER+CTRL+C` | Calculator |
 | `SUPER+1-0` | Focus workspace 1-10 |
 | `SUPER+SHIFT+1-0` | Move window to workspace 1-10 |
 | `SUPER+Q` | Kill active window |
@@ -237,16 +247,17 @@ Main modifier: SUPER.
 | `SUPER+T` | Toggle floating |
 | `SUPER+J` | Toggle split |
 | `SUPER+arrows` | Move focus |
-| `SUPER+PRINT` | Screenshot |
-| `SUPER+CTRL+L` | Power menu |
-| `SUPER+CTRL+H` | Welcome screen |
-| `SUPER+CTRL+N` | Network applet |
-| `SUPER+CTRL+B` | Bluetooth applet |
-| `SUPER+CTRL+W` | Wallpaper picker |
+| `SUPER+PRINT` | Screenshot (`shayar-screenshot`) |
+| `PRINT` | Interactive screenshot with Swappy |
+| `ALT+SPACE` | Unified settings menu (`shayar-menu`) |
 | `SUPER+CTRL+Return` | App launcher |
 | `SUPER+CTRL+K` | Show keybindings |
-| `SUPER+V` | Clipboard manager |
-
+| `SUPER+V` | Clipboard manager (`shayar-cliphist`) |
+| `SUPER+CTRL+L` | Power menu |
+| `SUPER+CTRL+H` | Welcome screen |
+| `SUPER+CTRL+W` | Wallpaper picker |
+| `SUPER+CTRL+N` | Network applet |
+| `SUPER+CTRL+B` | Bluetooth applet |
 | `SUPER+SHIFT+L` | Lock screen |
 | `SUPER+S` | Toggle special workspace "magic" |
 | `SUPER+SHIFT+S` | Toggle window in/out scratchpad |
@@ -265,145 +276,55 @@ Only `default.lua` ships. MD3 standard. 12 bezier curves (linear, md3_standard, 
 Only `default.lua` ships. gaps_in 10, gaps_out 20, border_size 2, active_border gradient (primary->on_primary 90deg), inactive on_primary, dwindle layout.
 
 ### Monitor presets (`conf/monitors/`)
-12 presets: 1366x768, 1440x1080, 1600x900, 1920x1080, 1920x1200, 2560x1440, 2560x1440@120, 2560x1440@120x125, 3440x1440, default-125, default, highres.
+Ships `default.lua`. Monitor geometry and HiDPI scaling are dynamically discovered at runtime in `autostart.lua`.
 
 ### Helper scripts (`scripts/`)
 4 scripts: gtk, keybindings, launcher, power.
 
 ---
 
-## Status Bar (`config/waybar/`)
 
-### `launch.sh`
-Main launcher with flock-based duplicate prevention:
-1. Kills all running waybar instances
-2. Sources `settings/shayar.conf` for `WAYBAR_THEME` and module toggles
-3. Loads config/style from theme directory (supports config-custom/style-custom overrides)
-4. Resolves `@DT_*@` tokens in JSON config and CSS via `design-tokens.env`
-5. Flattens CSS `@import` chains into single temp file, re-resolves tokens
-6. Respects `waybar-disabled` flag
-7. Sets HYPRLAND_INSTANCE_SIGNATURE for IPC
-8. Auto-restarts on crash (up to 5 retries)
+## Caelestia Shell (`config/caelestia/`)
 
-### `toggle.sh`
-Creates or removes the `waybar-disabled` flag, then relaunches.
+Caelestia is a full-featured, Qt6/Quickshell-based desktop shell that unifies status bar, application launcher, grouped notification center, quick utilities drawer, audio/brightness OSD, Bento dashboard, and lockscreen.
 
-### `config` (in theme dir)
-Bar layout defined in `themes/shayar/config`:
+### `shell.json`
+Main configuration file symlinked to `~/.config/caelestia/shell.json`:
+- **Logo**: Custom vector mark (`~/.config/shayar/assets/shayar.svg`) driving the top bar, dashboard user card, and lock screen fetch.
+- **Idle**: Configured with `"timeouts": []` to disable rogue Caelestia DPMS/suspend routines, delegating power management entirely to Shayar's safe `hypridle` daemon.
+- **Apps**: Configures preferred default applications (`terminal: ["kitty"]`).
+- **Bar**: Configures persistent status bar with dynamic workspace pill, active window title, system tray, and drawer launchers.
+- **Session**: Configures session drawer actions mapped to Shayar's `shayar-power` utility (`logout`, `shutdown`, `reboot`, `hibernate`).
+- **Paths**: Points wallpaper directory to `~/.config/shayar/wallpapers`.
+- **Services**: Configures smart scheme and PipeWire audio backend integrations.
 
-```
-modules-left:    clock
-modules-center:  workspaces
-modules-right:   pulseaudio | bluetooth | network | battery | divider | notification | exit
-```
+### Color & Wallpaper Synchronization
+- **Color Scheme**: Matugen compiles `config/matugen/templates/caelestia-scheme.json` into `~/.local/state/caelestia/scheme.json` on wallpaper change. Caelestia shell watches this file via `FileView` and hot-reloads all colors in real time.
+- **Wallpaper Path**: `shayar-wallpaper` writes current image path to `~/.local/state/caelestia/wallpaper/path.txt`, driving Caelestia's background and previews.
+- **CLI Bridge (`caelestia`)**: CLI shim at `config/shayar/bin/caelestia` intercepts wallpaper picking events from the Caelestia UI and delegates them to `shayar-wallpaper`.
 
-### `colors.css`
-106 lines of matugen-generated CSS color variables (Material Design 3 palette).
-
-### Themes (`themes/`)
-Single glass theme in `themes/shayar/`.
-
----
-
-## Application Launcher (`config/rofi/`)
-
-### `config.rasi`
-256 lines. Main launcher config:
-- Modes: drun, filebrowser, run
-- Font: Geist 11
-- Icon theme: Tela-circle-dracula
-- Window: 56em x 35em, rounded (24px), transparent with wallpaper background
-- Two-panel layout: left (imagebox with inputbar + mode-switcher), right (listview)
-- Loads: colors.rasi, rofi-font, rofi-border, rofi-border-radius, current wallpaper rasi
-
-### `colors.rasi`
-Material Design 3 color definitions for Rofi.
-
-### Rofi config modes:
-
-| File | Purpose | Window |
-|------|---------|--------|
-| `config.rasi` | Main app launcher | 56em x 35em, centered, two-panel |
-| `config-cliphist.rasi` | Clipboard history | 30em, northeast, single-column |
-| `config-cliphist.rasi` | Clipboard history | 30em, northeast, single-column |
-| `config-screenshot.rasi` | Screenshot mode selector | 30em, northeast, single-column width |
+### Drawers & Keybindings
+| Drawer / Component | Hyprland Bind | IPC Command | Description |
+|-------------------|---------------|-------------|-------------|
+| **Launcher** | `SUPER` (release) / `SUPER+CTRL+Return` | `qs -c caelestia ipc call drawers toggle launcher` | Searchable app launcher, calculator, scheme selector |
+| **Session** | `SUPER+CTRL+L` | `qs -c caelestia ipc call drawers toggle session` | Animated logout, shutdown, reboot, lock controls |
+| **Utilities** | `SUPER+CTRL+N` / `SUPER+CTRL+B` | `qs -c caelestia ipc call drawers toggle utilities` | WiFi & Bluetooth controls, screen recording, idle inhibit |
+| **Dashboard** | `SUPER+CTRL+D` | `qs -c caelestia ipc call drawers toggle dashboard` | Bento grid: calendar, weather, media, hardware metrics |
+| **Sidebar** | — | `qs -c caelestia ipc call drawers toggle sidebar` | Grouped notification history & DND controls |
+| **OSD** | — | `qs -c caelestia ipc call drawers toggle osd` | Floating volume & brightness pill |
+| **Lock Screen** | `SUPER+SHIFT+L` | Hyprland global `caelestia:lock` | Native Wayland lockscreen with pam auth & media |
 
 ---
-
----
-
-## Notification Center (`config/swaync/`)
-
-### `config.json`
-- Position: right, top, overlay layer
-- Control center: 360x700px
-- Notification window: 360px wide
-- Timeouts: 4s normal, 2s low, 6s critical
-- Transition: 200ms
-- Mutes Spotify notifications
-- Widgets: dnd, buttons-grid, title, notifications
-- Quick toggles: WiFi (nmcli), Bluetooth (rfkill), Mute (pactl), Lock (hyprlock)
-
-### Themes:
-- `glass/` -- style.css, control_center.css, notifications.css (solid backgrounds, token-driven)
-
----
-
-## Quickshell Applets (`config/quickshell/`)
-
-Replaced wlogout in 2026-07. Native QML panels with solid background, persistent Quickshell process, toggled via IPC. Each applet is self-contained (inline colors/tokens QtObjects). Color/token pipeline from `quickshell-tokens.json`.
-
-### Panel style (all applets)
-Solid `surface_container` background at 0.95 alpha, primary-tinted border, `RectangularShadow` with `z: -1`. No blur, no gradient. Tokens: `panel_bg_alpha`, `border_alpha`, `shadow_alpha`, `shadow_blur`.
-
-### Toggle mechanism
-All popups (power, calendar, net, bt, vol, welcome) use mutual exclusion — opening one closes the others via `qs ipc call <target> close`. Each toggle script calls `shayar-panel-pos` to calculate icon coordinates, then passes them via IPC so panels appear directly under their Waybar trigger icons. Power and Welcome center on screen.
-
-### `PowerApp/PowerWindow.qml`
-PanelWindow with 6 buttons (Lock, Suspend, Log Out, Hibernate, Restart, Shut Down), slide-from-right animation, keyboard navigation. Centers on right edge of screen.
-
-### `CalendarApp/CalendarWindow.qml`
-PanelWindow with a full month calendar, date picker, and quick navigation. Anchored top-left, positioned under clock icon on open. Auto-loads current month on open. Day cells have hover state.
-
-### `NetApp/NetWindow.qml`
-WiFi applet. Scans `nmcli` for nearby networks, shows SSID, signal strength, lock icon if secured, connected state. Actions: connect by BSSID, disconnect, toggle radio on/off, rescan. Auto-refreshes every 3s while open. Fully tokenized spacing/sizes.
-
-### `BtApp/BtWindow.qml`
-Bluetooth applet. Scans `bluetoothctl` for devices, shows name, MAC, paired/connected/trusted state. Actions: power toggle, connect/disconnect, pair+trust+connect, bounded 12s scan. Keyboard navigation (arrows + Enter). Fully tokenized spacing/sizes.
-
-### `VolApp/VolWindow.qml`
-Volume applet. Shows sink/source with slider, mute toggle, icon + label. Scroll wheel adjusts in 5% steps. Keyboard navigation (left/right + space). Per-app `vol_panel_radius`.
-
-### `WelcomeApp/WelcomeWindow.qml`
-First-boot welcome screen. Solid background, centered on screen. Displays keybindings list + quick launch buttons (Terminal, Browser, Launcher). Auto-shows on first boot via `.welcomed` flag file. IPC target: `welcome`.
-
-### Toggle scripts
-| Script | IPC target | Position |
-|--------|-----------|----------|
-| `shayar-power-toggle` | `power` | Centered on right edge |
-| `shayar-calendar-toggle` | `calendar` | Under clock icon |
-| `shayar-net-toggle` | `net` | Under network icon |
-| `shayar-bt-toggle` | `bt` | Under bluetooth icon |
-| `shayar-vol-toggle` | `vol` | Under volume icon |
-| `shayar-welcome-toggle` | `welcome` | Centered on screen |
-| `shayar-welcome` | `welcome` (open) | Centered on screen |
-
-### Color pipeline
-`matugen` → `~/.config/shayar/colors/quickshell.json` → read by `Process` in QML at startup. Reloaded via `qs ipc call theme-manager reload` on wallpaper change.
-
 
 ---
 
 ## Terminal (`config/kitty/`)
 
 ### `kitty.conf`
-- Font: GeistMono Nerd Font, 12pt
-- Window: 950x500, no decorations, padding 10, transparency 0.7, dynamic opacity
-- Cursor: blink interval 0.5s, stop after 1s
-- Scrollback: 2000 lines
+- Single source of truth: includes `design-tokens-kitty.conf` (font, font size, window size, padding, scrollback, dynamic background opacity)
 - Audio bell: disabled
 - Selection: transparent foreground/background
-- Includes: cursor trail setting, `colors-matugen.conf`, `custom.conf`
+- Includes: `colors-matugen.conf`, `custom.conf`
 
 ### `colors-matugen.conf`
 Matugen-generated terminal colors. Foreground: `#e4e1ee`, Background: `#12131b`. Full 16-color palette from Material Design 3.
@@ -413,45 +334,39 @@ Matugen-generated terminal colors. Foreground: `#e4e1ee`, Background: `#12131b`.
 ## Material You Color Generation (`config/matugen/`)
 
 ### `config.toml`
-11 template definitions. Each one takes a template file and generates output with matugen, then runs a post-hook:
+10 template definitions. Each one maps an input template to an output path with optional post-hooks:
 
 | Template | Output | Post-hook |
+|---|---|---|
 | `kitty` | `kitty/colors-matugen.conf` | `pkill -SIGUSR1 kitty` |
-| `hyprland` | `hypr/colors.conf` | `hyprctl reload` |
+| `hyprland` | `hypr/colors.conf` | -- |
 | `hyprland-lua` | `hypr/colors.lua` | `hyprctl reload` |
-| `waybar` | `waybar/colors.css` | -- |
-| `rofi` | `rofi/colors.rasi` | -- |
 | `gtk3` | `gtk-3.0/colors.css` | -- |
 | `gtk4` | `gtk-4.0/colors.css` | -- |
-| `pywalfox` | `~/.cache/wal/colors.json` | -- |
-| `swaync` | `swaync/colors.css` | -- |
-| `sequences` | `~/.cache/wal/sequences` | -- |
 | `primary` | `shayar/colors/primary` | -- |
 | `secondary` | `shayar/colors/secondary` | -- |
-| `onsurface` | `shayar/colors/onsurface` | -- |
-| `onprimary` | `shayar/colors/onprimary` | -- |
+| `on_surface` | `shayar/colors/onsurface` | -- |
+| `on_primary` | `shayar/colors/onprimary` | -- |
+| `caelestia` | `~/.local/state/caelestia/scheme.json` | -- |
 
 ### Templates (`templates/`)
-11 template files that matugen processes.
-
-### Post-hooks:
-(none currently shipped)
+9 template files that matugen processes.
 
 ---
 
-## Shell Configs (`config/bashrc/`, `config/zshrc/`)
+## Shell Configs (`config/bashrc/`, `config/zshrc/`, `config/shared-shell/`)
 
-Both shells share the same structure and aliases.
+Both shells share the same modular structure, aliases, and environment definitions via `config/shared-shell/`.
 
 ### Init (`00-init`):
 - `EDITOR=nvim`
 - PATH: `/usr/lib/ccache/bin/`, `~/.cargo/bin/`, `~/.local/bin/`
 
-### Aliases (`10-aliases`):
+### Aliases (`shared-shell/aliases`):
 
 | Alias | Command |
 |-------|---------|
-| `nf` | `neofetch` |
+| `nf` | `fastfetch --config ~/.config/shayar/themes/fastfetch.jsonc` (fallback `neofetch`) |
 | `ls` | `eza -a --icons=always` |
 | `ll` | `eza -al --icons=always` |
 | `lt` | `eza -a --tree --level=1 --icons=always` |
@@ -461,7 +376,7 @@ Both shells share the same structure and aliases.
 | `screenshot` | `shayar-screenshot` |
 | `updates` | `shayar-install-system-updates` |
 | `lock` | `hyprlock` |
-| `system` | system monitor |
+| `system` | `systemmonitor` |
 | `quick` | `shayar-quicklinks` |
 | `wallpaper` | `shayar-wallpaper` |
 | `gs/ga/gc/gp/gpl` | git commands |
@@ -469,11 +384,8 @@ Both shells share the same structure and aliases.
 ### Customization (`20-customization`):
 ZSH uses oh-my-zsh with plugins (git, sudo, web-search, archlinux, zsh-autosuggestions, zsh-syntax-highlighting, fast-syntax-highlighting, copyfile, copybuffer, dirhistory) and FZF keybindings.
 
-### Autostart (`30-autostart`):
+### Autostart (`shared-shell/autostart`):
 - `finder()` function wrapping `shayar-finder` (cd into dirs, edit files)
-
-### `themes/matugen.theme`
-89 lines. Generated Material Design 3 theme with full gradient definitions.
 
 ---
 
@@ -509,12 +421,9 @@ ZSH uses oh-my-zsh with plugins (git, sudo, web-search, archlinux, zsh-autosugge
 
 ---
 
-## Static Assets (`assets/`)
+## Static Assets
 
-- `icons/` -- Empty directory
-- `wallpapers/` -- Empty directory
-
-The actual wallpaper and icon assets live in `config/shayar/assets/` and `config/shayar/wallpapers/`.
+All branding and wallpaper assets live directly inside `config/shayar/assets/` and `config/shayar/wallpapers/`.
 
 ---
 
@@ -550,18 +459,27 @@ Source color: `#acc7ff` (blue)
 shayar-wallpaper (core)
   -> awww-daemon (wallpaper setter)
   -> matugen (color generation)
-    -> generates: kitty, waybar, rofi, gtk, hypr, swaync colors
-  -> waybar/launch.sh
-  -> swaync-client
+    -> generates: kitty, gtk, hypr, caelestia scheme.json
+    -> updates ~/.local/state/caelestia/wallpaper/path.txt
+  -> Caelestia Shell (hot-reloads via FileView)
 
 shayar-autostart
   -> nm-applet
   -> shayar-wallpaper
   -> listeners.sh --startall
-  -> waybar/launch.sh
-  -> swaync
   -> hypridle
+  -> caelestia shell -d
   -> cliphist
 
-Keybinds -> scripts -> bin/ tools -> fzf/gum/grim/slurp
+Keybinds -> scripts -> bin/ tools -> fzf/gum/grim/slurp/fuzzel
 ```
+
+---
+
+## Credits & Acknowledgments
+
+- **[ML4W Dotfiles](https://github.com/mylinuxforwork/dotfiles)** by Stephan Raabe — The modular Hyprland configuration structure, window rules, and environment foundation.
+- **[Caelestia Shell](https://github.com/caelestia-dots/caelestia-shell)** by Caelestia Dots — The desktop shell engine delivering the dynamic status bar, Bento dashboard, notification sidebar, quick utilities drawer, audio/brightness OSD, and session management.
+- **[Matugen](https://github.com/InioX/matugen)** by InioX — Material You (Material 3) palette generation from wallpapers.
+- **[Quickshell](https://quickshell.outfoxxed.me/)** by Outfoxxed — The high-performance reactive QML desktop shell engine.
+- **[Hyprland](https://hyprland.org/)** by Vaxry — The fluid, dynamic Wayland compositor.

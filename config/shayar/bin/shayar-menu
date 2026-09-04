@@ -9,7 +9,8 @@ ITEM_DIR="$HOME/.config/shayar/extensions/available/menu-items"
 entries=""
 add_entry() { entries="${entries}$1\n"; }
 
-add_entry "  Lock|hyprlock"
+add_entry "  Settings (Nexus)|qs -c caelestia ipc call nexus open"
+add_entry "  Lock|shayar-power -k"
 add_entry "  Shutdown|shayar-power -p"
 add_entry "  Reboot|shayar-power -r"
 add_entry "  Logout|shayar-power -l"
@@ -19,7 +20,7 @@ add_entry "ﮰ  Screenshot|shayar-screenshot"
 add_entry "  Network|shayar-net-toggle"
 add_entry "  Bluetooth|shayar-bt-toggle"
 add_entry "  System Updates|shayar-install-system-updates"
-add_entry "  Waybar Toggle|shayar-toggle-statusbar"
+add_entry "  Status Bar Toggle|shayar-toggle-statusbar"
 add_entry "  Clipboard|shayar-cliphist"
 add_entry "  File Manager|shayar-apps filemanager"
 add_entry "󰀻  System Monitor|shayar-apps systemmonitor"
@@ -35,7 +36,7 @@ if [ -d "$ITEM_DIR" ]; then
     done
 fi
 
-chosen=$(echo -e "$entries" | rofi -dmenu -p "Shayar" -i -theme-str 'entry { placeholder: "Search actions..."; }')
+chosen=$(echo -e "$entries" | fuzzel --dmenu -p "Shayar > ")
 
 if [ -n "$chosen" ]; then
     cmd="${chosen#*|}"

@@ -1,5 +1,0 @@
-/* Generated from design-tokens.json -- DO NOT EDIT */
-configuration {
-    font: "Geist, Symbols Nerd Font Mono 11";
-    icon-theme: "Tela-circle-dracula";
-}

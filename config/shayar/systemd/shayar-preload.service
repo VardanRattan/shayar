@@ -1,0 +1,13 @@
+[Unit]
+Description=Shayar Desktop Page-Cache Preloader
+Documentation=https://github.com/VardanRattan/shayar
+After=default.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/shayar-preload
+Nice=19
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=default.target

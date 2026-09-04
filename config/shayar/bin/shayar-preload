@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+"""
+shayar-preload - Asynchronously warms core desktop binaries, libraries,
+fonts, and Caelestia QML modules into the Linux kernel page cache (RAM)
+using posix_fadvise(POSIX_FADV_WILLNEED).
+
+Executed by systemd --user at boot while SDDM displays the login prompt.
+"""
+import glob
+import os
+import sys
+
+def preload_files():
+    targets = [
+        "/usr/bin/Hyprland",
+        "/usr/bin/start-hyprland",
+        "/usr/bin/quickshell",
+        "/usr/bin/caelestia",
+        "/usr/bin/awww-daemon",
+        "/usr/bin/awww",
+        "/usr/bin/kitty",
+        "/usr/bin/hypridle",
+        "/usr/bin/hyprctl",
+        "/usr/bin/wl-paste",
+        "/usr/bin/cliphist",
+        "/usr/bin/matugen",
+    ]
+
+    patterns = [
+        "/usr/lib/libQt6*.so*",
+        "/usr/lib/libhypr*.so*",
+        "/usr/lib/libwayland*.so*",
+        "/usr/lib/qt6/qml/Quickshell/**/*.qml",
+        "/etc/xdg/quickshell/caelestia/**/*.qml",
+        os.path.expanduser("~/.config/quickshell/caelestia/**/*.qml"),
+        os.path.expanduser("~/.config/shayar/**/*"),
+        os.path.expanduser("~/.cache/shayar/*"),
+    ]
+
+    for pat in patterns:
+        targets.extend(glob.glob(pat, recursive=True))
+
+    count = 0
+    for path in targets:
+        if os.path.isfile(path) and not os.path.islink(path):
+            try:
+                fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+                os.posix_fadvise(fd, 0, 0, os.POSIX_FADV_WILLNEED)
+                os.close(fd)
+                count += 1
+            except Exception:
+                pass
+
+    return count
+
+if __name__ == "__main__":
+    count = preload_files()
+    if "--verbose" in sys.argv or "-v" in sys.argv:
+        print(f":: Preloaded {count} files into page cache")

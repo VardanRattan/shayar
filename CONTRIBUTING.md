@@ -47,7 +47,7 @@ Shayar uses a two-tier branch workflow to ensure stability for users pulling liv
 4. Open your Pull Request targeting the **`dev`** branch (not `master`).
 
 > [!NOTE]
-> **Release Milestones:** When a collection of features and fixes on `dev` is verified and ready for release, `dev` is squashed into `master` as a single milestone release commit with a version bump tag (e.g. `release: v1.2.0`). External contributors are preserved and credited on release commits via `Co-authored-by` git attribution.
+> **Release Milestones:** When features and fixes on `dev` are verified and ready for release, `scripts/release.sh <version>` automates squashing `dev` into `master` as a single tagged release commit. The script automatically extracts all contributors who committed to `dev` and appends them as `Co-authored-by:` trailers so full credit is permanently preserved on GitHub and in Git history.
 
 ---
 

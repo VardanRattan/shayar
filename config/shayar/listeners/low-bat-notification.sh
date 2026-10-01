@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# If Caelestia Shell is active, its native event-driven UPower monitor handles notifications
+if pgrep -f "qs -c caelestia" >/dev/null 2>&1; then
+    exit 0
+fi
+
 # Notifications
 if [ -f "$HOME/.config/shayar/scripts/shayar-notification-handler" ]; then
     source "$HOME/.config/shayar/scripts/shayar-notification-handler"

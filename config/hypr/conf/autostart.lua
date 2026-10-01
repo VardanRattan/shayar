@@ -2,7 +2,8 @@ hl.on("hyprland.start", function ()
     local HOME = os.getenv("HOME")
 
     -- Wave A: Core environment, shell & daemons in parallel
-    hl.exec_cmd("bash -c 'dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP && systemctl --user restart xdg-desktop-portal-hyprland xdg-desktop-portal &'")
+    hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP")
+    hl.exec_cmd("systemctl --user restart xdg-desktop-portal-hyprland xdg-desktop-portal")
     hl.exec_cmd("awww-daemon")
     hl.exec_cmd("pgrep -x qs >/dev/null || caelestia shell -d")
     hl.exec_cmd("hyprctl setcursor " .. dt.typography.cursor_theme .. " " .. tostring(dt.typography.cursor_size))

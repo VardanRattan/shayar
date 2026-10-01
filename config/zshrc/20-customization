@@ -18,7 +18,6 @@ plugins=(
     archlinux
     zsh-autosuggestions
     zsh-syntax-highlighting
-    fast-syntax-highlighting
     copyfile
     copybuffer
     dirhistory
@@ -30,7 +29,14 @@ source $ZSH/oh-my-zsh.sh
 # -----------------------------------------------------
 # Set-up FZF key bindings (CTRL R for fuzzy history finder)
 # -----------------------------------------------------
-source <(fzf --zsh)
+if command -v fzf >/dev/null 2>&1; then
+    _FZF_ZSH_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/shayar/fzf.zsh"
+    if [ ! -f "$_FZF_ZSH_CACHE" ]; then
+        mkdir -p "$(dirname "$_FZF_ZSH_CACHE")"
+        fzf --zsh > "$_FZF_ZSH_CACHE" 2>/dev/null || true
+    fi
+    [ -f "$_FZF_ZSH_CACHE" ] && source "$_FZF_ZSH_CACHE"
+fi
 
 # zsh history
 HISTFILE=~/.zsh_history

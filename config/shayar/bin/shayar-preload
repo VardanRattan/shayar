@@ -35,6 +35,7 @@ def preload_files():
         os.path.expanduser("~/.config/quickshell/caelestia/**/*.qml"),
         os.path.expanduser("~/.config/shayar/**/*"),
         os.path.expanduser("~/.cache/shayar/*"),
+        os.path.expanduser("~/.cache/qmlcache/**/*"),
     ]
 
     for pat in patterns:

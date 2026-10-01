@@ -6,7 +6,7 @@ Thank you for your interest in contributing to Shayar! To maintain the high arch
 
 1. **Single Source of Truth for Visuals:**
    * All visual tokens (colors, margins, borders, radii, fonts, opacities) live in `config/shayar/themes/design-tokens.json`.
-   * **Never hardcode visual values** in Hyprland configs, Waybar styles, SwayNC configurations, or Rofi themes.
+   * **Never hardcode visual values** in Hyprland configs, Caelestia Shell styles, Kitty, or SDDM themes.
    * If you edit `design-tokens.json`, regenerate the token files by running:
      ```bash
      shayar-design-tokens generate --with-colors

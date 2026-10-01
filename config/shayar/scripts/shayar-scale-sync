@@ -5,9 +5,13 @@ set -euo pipefail
 monitors_json=$(hyprctl monitors -j 2>/dev/null || true)
 [ -z "$monitors_json" ] && exit 0
 
-scale=$(echo "$monitors_json" | jq -r '(.[] | select(.focused == true).scale) // .[0].scale // 1' 2>/dev/null || echo 1)
+# Extract active scale and check if HiDPI (> 1.0) in a single jq pass without bc
+read -r scale is_hidpi < <(echo "$monitors_json" | jq -r '
+  ((.[] | select(.focused == true).scale) // .[0].scale // 1) as $s |
+  "\($s) \(if ($s > 1.0) then 1 else 0 end)"
+' 2>/dev/null || echo "1 0")
 
-if command -v bc >/dev/null 2>&1 && [ "$(echo "$scale > 1.0" | bc -l 2>/dev/null || echo 0)" = "1" ]; then
+if [ "${is_hidpi:-0}" = "1" ]; then
     scale_int=$(printf "%.0f" "$scale")
     hyprctl setenv GDK_SCALE "$scale_int" >/dev/null 2>&1 || true
     hyprctl setenv QT_SCALE_FACTOR "$scale" >/dev/null 2>&1 || true

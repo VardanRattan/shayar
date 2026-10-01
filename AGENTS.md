@@ -17,7 +17,7 @@
 3. **Hyprland config** is modular Lua loaded by `hyprland.lua` in this order:
    functions → monitors → input → gestures → autostart → colors → tokens → environment → window → decoration → layout → workspace → misc → keybinding → windowrule → animation → shayar → custom
 4. **New scripts**: add to `config/shayar/bin/`, run `scripts/link.sh`.
-5. **Hyprland scripts** (under `config/hypr/scripts/`) are for WM-integrated tools (keybinds, power).
+5. **Hyprland scripts** (under `config/hypr/scripts/`) are for WM-integrated tools (keybinds, gtk).
 6. **Caelestia shell config**: lives in `config/caelestia/shell.json` and symlinks to `~/.config/caelestia/shell.json`.
 7. **Matugen templates** live in `config/matugen/templates/`. Each maps to a `[templates.*]` section in `config.toml`.
 8. **Caelestia IPC & Drawers** (`session`, `utilities`, `dashboard`, `osd`, `launcher`, `sidebar`) are triggered via `qs -c caelestia ipc call drawers toggle <name>` or Hyprland global shortcuts (`caelestia:<name>`).
@@ -28,7 +28,7 @@ Available extensions in `config/shayar/extensions/available/`:
 
 | Extension | Hook | Description |
 |---|---|---|
-| `hypridle-inhibitor` | `post-reload` | Toggles hypridle via flag file. Run with `status` arg for waybar JSON output. |
+| `hypridle-inhibitor` | `post-reload` | Toggles hypridle via flag file. Run with `status` arg for JSON status output. |
 | `menu-items` | — | Custom menu items for the app launcher. |
 
 ## Key paths
@@ -45,7 +45,7 @@ Available extensions in `config/shayar/extensions/available/`:
 | `config/shayar/` | Core engine: settings, themes, scripts, bin, listeners |
 | `config/shayar/settings/shayar.conf` | All user-facing settings |
 | `config/shayar/scripts/` | Core scripts (shayar-wallpaper, shayar-design-tokens, design_tokens.py, etc.) |
-| `config/shayar/bin/` | 18 CLI tools/symlinks available system-wide (including `caelestia` shim) |
+| `config/shayar/bin/` | 20 CLI tools/symlinks available system-wide (including `caelestia` shim) |
 | `config/shayar/themes/design-tokens.json` | **Single source of truth** for all visual values |
 | `config/shayar/themes/glass/theme.sh` | Theme activator |
 | `config/matugen/` | Color generation pipeline (config.toml + templates) |
@@ -61,7 +61,7 @@ Available extensions in `config/shayar/extensions/available/`:
 | Add a keybind | `hypr/conf/keybindings/default.lua` | `hyprctl reload` |
 | Add a window rule | `hypr/conf/shayar.lua` | `hyprctl reload` |
 | Modify Caelestia config | `config/caelestia/shell.json` | Caelestia hot-reloads |
-| Add a rofi mode | `rofi/config-<name>.rasi` + wire into keybind | New keybind |
+| Add a menu entry | `config/shayar/extensions/available/menu-items/` | Hot-reloads in `shayar-menu` |
 | Change theme | `themes/<name>/theme.sh` | Run the theme.sh |
 | New script | `shayar/bin/` | Run `scripts/link.sh` |
 | Regenerate colors from wallpaper | — | Run `shayar-wallpaper <path>` or `matugen image <path>` |
@@ -91,15 +91,15 @@ Syncs current wallpaper and matugen colors to the SDDM login screen. Run after e
 1. dbus-update-activation-environment
 2. Restart xdg-desktop-portal services
 3. awww-daemon (wallpaper daemon)
-4. Set cursor theme
-5. Dynamic HiDPI scaling detection & env propagation
-6. Start listeners (low-bat-notification)
-7. polkit agent
-8. shayar-autostart (wallpaper sync & cache)
-9. GTK settings
-10. hypridle (backlight idle monitor)
-11. Caelestia Shell (`caelestia shell -d`)
-12. cliphist watcher
+4. Caelestia Shell (`pgrep -x qs >/dev/null || caelestia shell -d`)
+5. Set cursor theme
+6. Dynamic HiDPI scaling detection & env propagation (`shayar-scale-sync`)
+7. Start listeners (`listeners.sh --startall`)
+8. polkit agent
+9. shayar-autostart (wallpaper sync & cache check)
+10. GTK settings (`gtk.sh`)
+11. hypridle (backlight idle monitor)
+12. cliphist watcher (`wl-paste --watch cliphist store`)
 
 ### Wallpaper pipeline (`shayar-wallpaper`)
 validate → cache → wait for awww → `awww img` → matugen → sync `scheme.json` & terminal/WM colors → generate blurred wallpaper
@@ -118,11 +118,10 @@ validate → cache → wait for awww → `awww img` → matugen → sync `scheme
 
 ## Performance notes
 
-- Battery waybar module polls at **60s interval** (P0 fix: was 1s)
+- Battery monitoring handled natively by Caelestia Shell via UPower event-driven architecture; fallback listener polls at **60s**
 - Updates check at **30min interval**
-- Low battery listener polls at **60s**
-- Startup: ~13 steps in `autostart.lua`, ~5 actions in `shayar-autostart`
-- ~26 shell scripts + 1 Python compiler script total, all lean (<150 lines each except `shayar-wallpaper` at 228)
+- Startup: 12 steps in `autostart.lua` parallelized into async waves, instant bypass in `shayar-autostart` on cache hit (21 ms)
+- ~26 shell scripts + 1 Python compiler script total, all lean (<150 lines each except `shayar-wallpaper` at 230)
 
 - `caelestia-shell` — desktop shell engine (bar, dashboard, drawers, OSD, lock)
 - `awww-daemon` — wallpaper setter

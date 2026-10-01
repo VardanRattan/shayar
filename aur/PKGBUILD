@@ -1,5 +1,5 @@
 pkgname=shayar-dotfiles-git
-pkgver=1.0.0
+pkgver=1.1.0
 pkgrel=1
 pkgdesc="A unified Hyprland desktop shell and Material You design system"
 arch=('any')
@@ -14,7 +14,7 @@ md5sums=('SKIP')
 
 pkgver() {
   cd "$srcdir/shayar"
-  printf "%s.r%s.%s" "$(git describe --tags --abbrev=0 2>/dev/null || echo 1.0.0)" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+  printf "%s.r%s.%s" "$(git describe --tags --abbrev=0 2>/dev/null || echo 1.1.0)" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
 }
 
 package() {

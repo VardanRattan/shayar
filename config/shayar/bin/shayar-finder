@@ -5,9 +5,9 @@ set -euo pipefail
 # CLI Fuzzy Finder
 # ------------------------------------------
 
-# --- 1. Generate List with find's internal type check ---
+# --- 1. Generate List with find's internal type check & pruning ---
 # %y = type (d=dir, f=file), %p = path
-LIST=$(find -L . -maxdepth 4 -printf "%y %p\n" 2>/dev/null | awk '
+LIST=$(find -L . -maxdepth 4 \( -name .git -o -name node_modules -o -name .cache \) -prune -o -printf "%y %p\n" 2>/dev/null | awk '
     $1 == "d" { print " " $2 }
     $1 == "f" { print "󰈚 " $2 }
     $1 == "l" { print " " $2 }

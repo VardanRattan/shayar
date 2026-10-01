@@ -91,16 +91,17 @@ Branding. `shayar-logo.png`, `shayar.svg`. The official mark is the **Geometric 
 ### `wallpapers/`
 Default wallpapers. `default.png` is the shipped default wallpaper.
 
-### `bin/`
-19 CLI tools and extension symlinks available system-wide after linking:
+#### `bin/`
+20 CLI tools and extension symlinks available system-wide after linking:
 
 - **`shayar-apps`** -- Scans `/usr/share/applications` and `~/.local/share/applications` for `.desktop` files. Handles Flatpak apps. Feeds them to fzf. Icons: `󰀻 ` for system apps, `󰏖 ` for Flatpak.
 - **`shayar-finder`** -- Traverses directories up to 4 levels deep. Returns `TYPE_DIR:` or `TYPE_FILE:` prefixes for shell integration.
 - **`shayar-quicklinks`** -- Reads `~/.quicklinks` (pipe-delimited: `Name | Description | Command`). Shows in fzf.
 - **`shayar-screenshot`** -- Wraps `grim`/`slurp`. Supports fullscreen, area selection, and window selection. Delay options: 0s, 2s, 5s, 10s. Copies to clipboard via `wl-copy`. Saves to the folder specified by `SCREENSHOT_FOLDER` in `shayar.conf`.
 - **`shayar-wallpaper`** -- Fzf wallpaper picker. Reads the wallpaper directory from `WALLPAPER_FOLDER` in `shayar.conf`. Filters to jpg/jpeg/png/webp/gif.
-- **`shayar-menu`** -- Unified settings menu (rofi). Supports extension menu items.
+- **`shayar-menu`** -- Unified settings menu (fuzzel). Supports extension menu items.
 - **`caelestia`** — CLI bridge shim routing wallpaper commands to `shayar-wallpaper` and passing other subcommands to `/usr/bin/caelestia`.
+- **`shayar-power`** — Unified power management capsule (`--lock`, `--suspend`, `--logout`, `--reboot`, `--poweroff`).
 - **`shayar-power-toggle`** — Power / Session menu (Caelestia session drawer).
 - **`shayar-calendar-toggle`** — Calendar / Dashboard (Caelestia dashboard drawer).
 - **`shayar-net-toggle`** — Network & quick controls (Caelestia utilities drawer).
@@ -109,11 +110,13 @@ Default wallpapers. `default.png` is the shipped default wallpaper.
 - **`shayar-vol-scroll`** — Smooth volume scroll helper with safety clamping.
 - **`shayar-brightness-get`** — Direct sysfs backlight reader for brightness controls.
 - **`shayar-sddm-sync`** — Syncs current wallpaper and matugen colors to SDDM login screen. Requires `--install` first, then run after wallpaper changes. Requires sudo.
+- **`shayar-autologin`** — SDDM auto-login management utility (`--status`, `--enable [user]`, `--disable`).
+- **`shayar-preload`** — Pre-warms desktop binaries, Qt6/QML libraries, and fonts into Linux kernel page cache via `posix_fadvise` for near-instant boot.
 - **`shayar-wifi-popup`** — WiFi popup (legacy).
 - **`hypridle-inhibitor`** — Symlink to extension script for toggling idle inhibition.
 
 ### `scripts/`
-14 scripts. Grouped by function:
+15 scripts. Grouped by function:
 
 **Core & Design Tokens:**
 - `design_tokens.py` -- Python compiler generating 10 configuration formats from `design-tokens.json`.
@@ -123,17 +126,19 @@ Default wallpapers. `default.png` is the shipped default wallpaper.
 
 **Wallpaper pipeline:**
 - `shayar-wallpaper` -- The main wallpaper engine. Full pipeline: validate image, cache path, apply effects, wait for awww-daemon, set wallpaper via `awww img`, run matugen, sync Caelestia Shell palette (`scheme.json`), and generate blurred wallpaper for lockscreen. Flags: `--random`, `--effect`, `--monitor`, `--skip-wallpaper`, `--skip-theming`, `--crop-gravity`.
-- `shayar-autostart` -- Main startup orchestrator. Creates cache folder, applies wallpaper theming.
+- `shayar-autostart` -- Main startup orchestrator. Creates cache folder, verifies cached scheme/blur, and applies wallpaper theming.
 
-**Toggles:**
+**Toggles & Scaling:**
+- `shayar-scale-sync` -- Dynamically detects focused monitor scaling and exports `GDK_SCALE` and `QT_SCALE_FACTOR` to Hyprland environment.
 - `shayar-toggle-statusbar` -- Toggles Caelestia status bar via IPC (`drawers toggle bar`).
 - `shayar-toggle-scratchpad-window` -- Moves active window to/from the `special:magic` workspace.
 
-**System tools:**
+**System tools & Branding:**
 - `shayar-power` -- Power management capsule. Options: `--lock`, `--suspend`, `--logout`, `--reboot`, `--poweroff`. Calls Caelestia lock IPC with clean session handlers.
 - `shayar-network` -- Starts NetworkManager if needed, opens nmtui.
 - `shayar-notification-handler` -- Wrapper around `notify-send` with standardized options.
 - `shayar-cliphist` -- Clipboard manager leveraging `caelestia clipboard`. Modes: list, delete, wipe.
+- `shayar-sddm-patch-branding.sh` -- Patches SDDM Caelestia theme with Shayar Quill emblem and QML branding overrides.
 
 **Installation and updates:**
 - `shayar-install-system-updates` -- Full system update. Supports Arch (yay/paru) and Fedora (dnf). Also updates Flatpak. Uses `gum` for colored output.
@@ -172,17 +177,17 @@ Modular Lua config that loads everything in order:
 ### `conf/autostart.lua`
 Startup sequence on `hyprland.start`:
 1. Export Wayland environment to systemd
-2. Restart xdg-desktop-portal
+2. Restart xdg-desktop-portal services
 3. Start awww-daemon (wallpaper daemon)
-4. Set cursor theme
-5. Dynamic HiDPI scale detection and environment propagation (`GDK_SCALE`, `QT_SCALE_FACTOR`)
-6. Start all listeners
-7. Start polkit agent
-8. Run `shayar-autostart` (wallpaper + nm-applet, sets `waybar-disabled`)
-9. Run `gtk.sh` (GTK settings)
-10. Start hypridle
-11. Start Caelestia Shell (`caelestia shell -d`)
-12. Load cliphist history
+4. Start Caelestia Shell (`pgrep -x qs >/dev/null || caelestia shell -d`)
+5. Set cursor theme
+6. Dynamic HiDPI scale detection and environment propagation (`shayar-scale-sync`)
+7. Start all listeners (`listeners.sh --startall`)
+8. Start polkit agent
+9. Run `shayar-autostart` (wallpaper sync & scheme caching)
+10. Run `gtk.sh` (GTK settings)
+11. Start hypridle
+12. Start cliphist watcher (`wl-paste --watch cliphist store`)
 
 ### `conf/shayar.lua`
 Shayar-specific configuration:
@@ -236,7 +241,7 @@ Main modifier: SUPER.
 |-----|--------|
 | `SUPER+Return` | Terminal |
 | `SUPER+B` | Browser |
-| `SUPER+SHIFT+B` | Toggle statusbar |
+| `SUPER+SHIFT+B` | Toggle desktop panels / statusbar |
 | `SUPER+E` | File manager |
 | `SUPER+CTRL+E` | Emoji picker |
 | `SUPER+CTRL+C` | Calculator |
@@ -253,11 +258,11 @@ Main modifier: SUPER.
 | `SUPER+CTRL+Return` | App launcher |
 | `SUPER+CTRL+K` | Show keybindings |
 | `SUPER+V` | Clipboard manager (`shayar-cliphist`) |
-| `SUPER+CTRL+L` | Power menu |
-| `SUPER+CTRL+H` | Welcome screen |
+| `SUPER+CTRL+L` | Power / Session menu |
+| `SUPER+I` | Settings panel (Nexus) |
 | `SUPER+CTRL+W` | Wallpaper picker |
-| `SUPER+CTRL+N` | Network applet |
-| `SUPER+CTRL+B` | Bluetooth applet |
+| `SUPER+CTRL+N` | Network & utilities drawer |
+| `SUPER+CTRL+B` | Bluetooth & utilities drawer |
 | `SUPER+SHIFT+L` | Lock screen |
 | `SUPER+S` | Toggle special workspace "magic" |
 | `SUPER+SHIFT+S` | Toggle window in/out scratchpad |
@@ -279,7 +284,7 @@ Only `default.lua` ships. gaps_in 10, gaps_out 20, border_size 2, active_border 
 Ships `default.lua`. Monitor geometry and HiDPI scaling are dynamically discovered at runtime in `autostart.lua`.
 
 ### Helper scripts (`scripts/`)
-4 scripts: gtk, keybindings, launcher, power.
+2 scripts: `gtk.sh` (GTK schema synchronizer) and `keybindings.sh` (keybindings viewer).
 
 ---
 
@@ -463,12 +468,16 @@ shayar-wallpaper (core)
     -> updates ~/.local/state/caelestia/wallpaper/path.txt
   -> Caelestia Shell (hot-reloads via FileView)
 
-shayar-autostart
-  -> nm-applet
-  -> shayar-wallpaper
-  -> listeners.sh --startall
-  -> hypridle
+autostart.lua
+  -> dbus & portal services
+  -> awww-daemon
   -> caelestia shell -d
+  -> shayar-scale-sync
+  -> listeners.sh --startall
+  -> polkit agent
+  -> shayar-autostart -> shayar-wallpaper
+  -> gtk.sh
+  -> hypridle
   -> cliphist
 
 Keybinds -> scripts -> bin/ tools -> fzf/gum/grim/slurp/fuzzel

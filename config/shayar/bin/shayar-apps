@@ -12,7 +12,7 @@ FLATPAK_SYM="󰏖"  # Distinct icon for all Flatpaks
 FLATPAK_ICON="$FLATPAK_SYM "  # Distinct icon for all Flatpaks
 
 # --- 1. Collect Standard Apps (AWK) ---
-LIST=$(find -L "${DIRS[@]}" -name "*.desktop" -type f 2>/dev/null | xargs awk -F'=' -v inc_term="$INCLUDE_TERMINAL_APPS" '
+LIST=$(find -L "${DIRS[@]}" -name "*.desktop" -type f -print0 2>/dev/null | xargs -0 -r awk -F'=' -v inc_term="$INCLUDE_TERMINAL_APPS" '
     function print_entry() {
         if (name != "" && exec != "") {
             if (inc_term == "true" || is_term != "true") {

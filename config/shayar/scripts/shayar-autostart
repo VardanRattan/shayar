@@ -47,7 +47,24 @@ fi
 
 # Apply wallpaper theming on startup only if needed.
 # Skips heavy matugen & imagemagick regeneration if colors & blur are already cached.
-CURRENT_WP=$(cat "$CACHE_FILE")
+CURRENT_WP=$(cat "$CACHE_FILE" 2>/dev/null || true)
+if [ -n "$CURRENT_WP" ] && [ -f "$CURRENT_WP" ]; then
+    CURRENT_WP="$(realpath "$CURRENT_WP")"
+elif [ -n "$CURRENT_WP" ] && [ -f "${WALLPAPER_FOLDER:-$HOME/.config/shayar/wallpapers}/$CURRENT_WP" ]; then
+    CURRENT_WP="$(realpath "${WALLPAPER_FOLDER:-$HOME/.config/shayar/wallpapers}/$CURRENT_WP")"
+elif [ -f "$DEFAULT_WALLPAPER" ]; then
+    CURRENT_WP="$(realpath "$DEFAULT_WALLPAPER")"
+else
+    fallback_wallpaper=$(find "$HOME/.config/shayar/wallpapers" -type f \( -name "*.png" -o -name "*.jpg" -o -name "*.jpeg" -o -name "*.webp" \) 2>/dev/null | head -n 1)
+    CURRENT_WP="${fallback_wallpaper:-$DEFAULT_WALLPAPER}"
+fi
+
+# Ensure cache and Caelestia wallpaper path are always valid absolute paths
+echo "$CURRENT_WP" > "$CACHE_FILE"
+CAELESTIA_WALL_DIR="${HOME}/.local/state/caelestia/wallpaper"
+mkdir -p "$CAELESTIA_WALL_DIR"
+echo "$CURRENT_WP" > "$CAELESTIA_WALL_DIR/path.txt"
+
 SCHEME_FILE="${HOME}/.local/state/caelestia/scheme.json"
 BLUR_FILE="${CACHE_FOLDER}/blurred_wallpaper.png"
 

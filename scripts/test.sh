@@ -40,7 +40,7 @@ echo ""
 # ------------------------------------------------------------------
 echo "--- JSON validity ---"
 # ------------------------------------------------------------------
-for f in config/shayar/themes/design-tokens.json config/shayar/themes/shayar.json config/shayar/version.json config/swaync/config.json; do
+for f in config/shayar/themes/design-tokens.json config/shayar/themes/shayar.json config/shayar/version.json config/caelestia/shell.json; do
     if [ -f "$f" ]; then
         check "$f" jq -e . "$f"
     else
@@ -109,7 +109,7 @@ if [ -f config/shayar/themes/design-tokens.json ] && [ -f config/shayar/colors/p
         file_val=$(cat "config/shayar/colors/$f_col" 2>/dev/null || echo "")
         if [ -n "$file_val" ] && [ "$file_val" != "$dt_val" ]; then
             echo "  COLOR MISMATCH: $f_col (token $token) dt=$dt_val file=$file_val" >&2
-            ((MISMATCH++))
+            MISMATCH=$((MISMATCH + 1))
         fi
     done
     if [ "$MISMATCH" -eq 0 ]; then

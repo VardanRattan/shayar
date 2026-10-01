@@ -34,6 +34,16 @@ fi
 
 # Fallback to upstream caelestia binary for shell, scheme, lock, etc.
 if [ -x /usr/bin/caelestia ]; then
+    if [[ "${1:-}" == "shell" ]]; then
+        if ! quickshell --version >/dev/null 2>&1; then
+            msg="Quickshell runtime is broken (likely Qt ABI mismatch after upgrade).\nRun: yay -S --rebuild quickshell-git"
+            echo -e "\033[1;31m[ERROR] ${msg}\033[0m" >&2
+            if command -v notify-send >/dev/null 2>&1; then
+                notify-send -u critical -a "Caelestia Shell" "Caelestia Shell Failed to Start" "Quickshell is broken after a Qt update.\nRun: yay -S --rebuild quickshell-git"
+            fi
+            exit 1
+        fi
+    fi
     exec /usr/bin/caelestia "$@"
 else
     echo "caelestia CLI bridge: /usr/bin/caelestia not found. Install caelestia-cli." >&2

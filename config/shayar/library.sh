@@ -34,7 +34,7 @@ run_extensions() {
     for dir in "${dirs[@]}"; do
         [ -d "$dir" ] || continue
         for script in "$dir"/*.sh; do
-            [ -f "$script" ] && source "$script"
+            [ -f "$script" ] && ( source "$script" ) || true
         done
     done
 }

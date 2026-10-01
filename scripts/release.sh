@@ -6,14 +6,17 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$REPO_ROOT"
 
-# Ensure arguments
-if [ $# -lt 1 ]; then
-    echo "Usage: $0 <version> [summary]"
+# Resolve version: use argument or read from existing version file
+DEFAULT_VER="$(cat "$REPO_ROOT/version" 2>/dev/null || true)"
+NEW_VERSION="${1:-$DEFAULT_VER}"
+NEW_VERSION="${NEW_VERSION#v}" # Strip leading 'v' if present
+
+if [ -z "$NEW_VERSION" ]; then
+    echo "Usage: $0 [version] [summary]"
     echo "Example: $0 1.2.0 \"Touchpad tap-to-click, pavucontrol regex fix, and stability updates\""
     exit 1
 fi
 
-NEW_VERSION="${1#v}" # Strip leading 'v' if provided
 SUMMARY="${2:-Release v$NEW_VERSION}"
 
 # 1. Verify working directory is clean
@@ -40,30 +43,7 @@ CO_AUTHORS="$(git log master..dev --format="Co-authored-by: %an <%ae>" | grep -v
 # 5. Extract commit summaries from dev
 COMMIT_LOGS="$(git log master..dev --no-merges --format="- %s (%h)" || true)"
 
-# 6. Update version files in dev first
-echo ":: Bumping version to $NEW_VERSION..."
-echo "$NEW_VERSION" > "$REPO_ROOT/version"
-
-if [ -f "$REPO_ROOT/config/shayar/version.json" ]; then
-    python3 -c "
-import json
-with open('config/shayar/version.json', 'r') as f:
-    data = json.load(f)
-data['Version'] = '$NEW_VERSION'
-with open('config/shayar/version.json', 'w') as f:
-    json.dump(data, f, indent=4)
-    f.write('\n')
-"
-fi
-
-if [ -f "$REPO_ROOT/aur/PKGBUILD" ]; then
-    sed -i "s/^pkgver=.*/pkgver=$NEW_VERSION/" "$REPO_ROOT/aur/PKGBUILD"
-fi
-
-git add version config/shayar/version.json aur/PKGBUILD
-git commit -m "chore: bump version to $NEW_VERSION"
-
-# 7. Switch to master and squash-merge dev
+# 6. Switch to master and squash-merge dev
 echo ":: Switching to master..."
 git checkout master
 git pull origin master
@@ -71,7 +51,7 @@ git pull origin master
 echo ":: Squash-merging dev into master..."
 git merge --squash dev
 
-# 8. Build the release commit message
+# 7. Build the release commit message
 RELEASE_MSG="release: v$NEW_VERSION — $SUMMARY"
 
 if [ -n "$COMMIT_LOGS" ]; then
@@ -87,13 +67,13 @@ if [ -n "$CO_AUTHORS" ]; then
 $CO_AUTHORS"
 fi
 
-# 9. Commit the squashed release on master
+# 8. Commit the squashed release on master
 git commit -m "$RELEASE_MSG"
 
-# 10. Create version tag
+# 9. Create version tag
 git tag "v$NEW_VERSION"
 
-# 11. Switch back to dev and sync with master
+# 10. Switch back to dev and sync with master
 git checkout dev
 git merge master -m "chore: sync dev with master release v$NEW_VERSION"
 

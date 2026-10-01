@@ -35,14 +35,53 @@ Built on the modular foundation of [ML4W Dotfiles](https://github.com/mylinuxfor
 
 ## Install
 
+### Option A: Automated Bootstrap (Recommended)
+
+The automated installer detects your package manager (`paru`, `yay`, `pacman`, `dnf`), installs all system packages and dependencies, installs Geist fonts, configures Oh My Zsh with plugins, links all configs to `~/.config`, and compiles your initial design tokens.
+
+**One-line installation:**
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/VardanRattan/shayar/main/scripts/install.sh)
+```
+
+**Or from a cloned repository:**
+```bash
+git clone https://github.com/VardanRattan/shayar.git ~/shayar
+cd ~/shayar
+./scripts/install.sh
+```
+
+### Option B: Symlink Only (Dotfiles Sync)
+
+If you have already installed all required system dependencies and only want to link the configurations and CLI utilities to `~/.config` and `~/.local/bin`:
+
 ```bash
 git clone https://github.com/VardanRattan/shayar.git ~/shayar
 cd ~/shayar
 ./scripts/link.sh
+~/.config/shayar/scripts/shayar-design-tokens generate --with-colors
 ```
 
 > [!IMPORTANT]
-> **Never copy files manually.** The architecture uses symlinks — edits in the repo apply instantly, and `git pull` updates your desktop.
+> **`link.sh` only creates symlinks** — it does not install packages or dependencies. If you are setting up a new system, run `./scripts/install.sh` instead.
+
+### Post-Install Steps (All Optional)
+
+The desktop works out of the box immediately after running the installer. All post-install steps below are purely optional:
+
+| Action | Command | Details & If Skipped |
+|:--|:--|:--|
+| **1. Shell (Bash / Zsh)** | `chsh -s /usr/bin/zsh` *(optional)* | **Bash and Zsh are both fully supported out of the box.** If you use Bash, you don't need to change anything — Shayar loads all aliases and paths through `~/.config/bashrc/`. Only run this command if you prefer Zsh with Oh My Zsh. |
+| **2. Custom Wallpaper** | `shayar-wallpaper ~/path/to/wallpaper.jpg` | **What you see:** On first login, `shayar-autostart` automatically applies the bundled default wallpaper (`default.png`) and generates matching Material You colors.<br>**What you don't see:** You simply won't see your personal wallpaper until you pick one. |
+| **3. SDDM Theme Sync** | `shayar-sddm-sync --install` *(optional)* | **What you see:** If skipped, your boot login screen stays on your system's stock SDDM theme (or upstream Caelestia's astronaut theme).<br>**What you get if run:** Replaces the default astronaut with Shayar's quill emblem and synchronizes your SDDM login screen colors and background with your active desktop wallpaper. *(If you don't use SDDM or use auto-login, ignore this entirely).* |
+
+### Rollback / Uninstall
+
+To remove the symlinks and restore your backed-up configurations:
+
+```bash
+./scripts/unlink.sh
+```
 
 ### Requirements
 
@@ -61,7 +100,7 @@ cd ~/shayar
 
 | Distro | Status |
 |:--|:--|
-| Arch (EndeavourOS, Garuda) | Native — automated install |
+| Arch (EndeavourOS, Garuda) | Native — automated install (`./scripts/install.sh`) |
 | Fedora | Community — manual matugen/quickshell build |
 | Ubuntu/Debian | Unsupported (packages too old) |
 

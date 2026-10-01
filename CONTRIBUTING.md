@@ -27,6 +27,30 @@ Thank you for your interest in contributing to Shayar! To maintain the high arch
 
 ---
 
+## 🌿 Branching Strategy & Pull Requests
+
+Shayar uses a two-tier branch workflow to ensure stability for users pulling live configurations:
+
+- **`master` (Stable Releases):** The primary branch is strictly reserved for production-ready, tagged releases (`vX.Y.Z`). End users clone and pull from `master`.
+- **`dev` (Active Development):** All active development, bug fixes, experiments, and community contributions happen on `dev`.
+
+### How to submit a Pull Request:
+1. Fork the repository and create your feature or bugfix branch off of **`dev`**:
+   ```bash
+   git checkout -b my-feature-name origin/dev
+   ```
+2. Implement your changes following the architectural conventions above.
+3. Verify that all smoke tests pass locally:
+   ```bash
+   bash scripts/test.sh
+   ```
+4. Open your Pull Request targeting the **`dev`** branch (not `master`).
+
+> [!NOTE]
+> **Release Milestones:** When a collection of features and fixes on `dev` is verified and ready for release, `dev` is squashed into `master` as a single milestone release commit with a version bump tag (e.g. `release: v1.2.0`). External contributors are preserved and credited on release commits via `Co-authored-by` git attribution.
+
+---
+
 ## 🧪 Testing Your Changes
 
 Before submitting your changes, run the local smoke test suite to verify syntax, JSON validity, and token generator integrity:

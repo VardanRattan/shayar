@@ -23,6 +23,7 @@ hl.config({
             passes    = dt.spacing.blur_passes,
             ignore_opacity = true,
             xray = true,
+            new_optimizations = true,
             vibrancy  = dt.spacing.blur_vibrancy,
         },
     },

@@ -4,8 +4,17 @@
             "enabled": true
         }
     },
+    "background": {
+        "enabled": false
+    },
     "bar": {
         "persistent": true
+    },
+    "dashboard": {
+        "enabled": true,
+        "mediaUpdateInterval": 2000,
+        "resourceUpdateInterval": 5000,
+        "showWeather": true
     },
     "general": {
         "apps": {
@@ -25,10 +34,14 @@
         },
         "logo": "~/.config/shayar/assets/shayar.svg"
     },
+    "nexus": {
+        "networkRescanInterval": 60000
+    },
     "paths": {
         "wallpaperDir": "~/.config/shayar/wallpapers"
     },
     "services": {
+        "gpuType": "Auto",
         "smartScheme": false
     },
     "session": {
@@ -51,5 +64,11 @@
             ]
         },
         "enabled": true
+    },
+    "utilities": {
+        "enabled": true,
+        "vpn": {
+            "enabled": false
+        }
     }
 }

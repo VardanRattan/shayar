@@ -90,10 +90,8 @@ if [ -d "/etc/xdg/quickshell/caelestia" ]; then
     mkdir -p "$CAEL_DIR/modules"
     for m in /etc/xdg/quickshell/caelestia/modules/*; do
         m_name=$(basename "$m")
-        if [ "$m_name" = "BatteryMonitor.qml" ]; then
-            if [ -f "$REPO_ROOT/config/caelestia/overrides/BatteryMonitor.qml" ]; then
-                ln -sf "$REPO_ROOT/config/caelestia/overrides/BatteryMonitor.qml" "$CAEL_DIR/modules/BatteryMonitor.qml"
-            fi
+        if [ -f "$REPO_ROOT/config/caelestia/overrides/$m_name" ]; then
+            ln -sf "$REPO_ROOT/config/caelestia/overrides/$m_name" "$CAEL_DIR/modules/$m_name"
         elif [ "$m_name" = "lock" ]; then
             mkdir -p "$CAEL_DIR/modules/lock"
             for lk in /etc/xdg/quickshell/caelestia/modules/lock/*; do

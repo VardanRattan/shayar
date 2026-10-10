@@ -22,6 +22,11 @@ NOTIFIED_20=false
 NOTIFIED_15=false
 
 while true; do
+    # Exit if Caelestia Shell has become active (native UPower takes over)
+    if pgrep -f "qs -c caelestia" >/dev/null 2>&1; then
+        exit 0
+    fi
+
     CAPACITY=$(cat "$BAT/capacity")
     STATUS=$(cat "$BAT/status")
 

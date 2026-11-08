@@ -36,6 +36,8 @@ hl.on("hyprland.start", function ()
     -- Wallpaper sync & GTK theme (async background)
     hl.exec_cmd(HOME .. "/.config/shayar/scripts/shayar-autostart &")
     hl.exec_cmd(HOME .. "/.config/hypr/scripts/gtk.sh &")
+    hl.exec_cmd(HOME .. "/.local/bin/shayar-battery-profile --apply &")
+    hl.exec_cmd("command -v xsettingsd >/dev/null && (pgrep -x xsettingsd >/dev/null || xsettingsd &)")
 
     -- Idle daemon & clipboard watcher
     hl.exec_cmd("pgrep -x hypridle >/dev/null || hypridle")

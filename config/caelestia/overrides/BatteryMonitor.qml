@@ -1,5 +1,6 @@
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import Quickshell.Services.UPower
 import Caelestia
 import Caelestia.Config
@@ -10,6 +11,16 @@ Scope {
 
     readonly property list<var> warnLevels: [...GlobalConfig.general.battery.warnLevels].sort((a, b) => a.level - b.level)
     property real lastPercentage: 100
+
+    Process {
+        id: powerProfileProcess
+        command: ["shayar-battery-profile", "--apply"]
+    }
+
+    Component.onCompleted: {
+        powerProfileProcess.command = ["shayar-battery-profile", "--apply"];
+        powerProfileProcess.running = true;
+    }
 
     function handleBatteryWarnings(): void {
         const p = UPower.displayDevice.percentage * 100;
@@ -43,11 +54,15 @@ Scope {
 
             if (UPower.onBattery) {
                 if (GlobalConfig.utilities.toasts.chargingChanged)
-                    Toaster.toast(qsTr("Charger unplugged"), qsTr("Battery is discharging"), "power_off");
+                    Toaster.toast(qsTr("Charger unplugged"), qsTr("Battery saver profile active"), "power_off");
+                powerProfileProcess.command = ["shayar-battery-profile", "--battery"];
+                powerProfileProcess.running = true;
                 root.handleBatteryWarnings();
             } else {
                 if (GlobalConfig.utilities.toasts.chargingChanged)
-                    Toaster.toast(qsTr("Charger plugged in"), qsTr("Battery is charging"), "power");
+                    Toaster.toast(qsTr("Charger plugged in"), qsTr("AC performance profile active"), "power");
+                powerProfileProcess.command = ["shayar-battery-profile", "--ac"];
+                powerProfileProcess.running = true;
                 root.lastPercentage = 100;
             }
         }

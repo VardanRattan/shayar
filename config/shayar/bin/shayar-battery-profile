@@ -1,0 +1,196 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# shayar-battery-profile - Dynamic power management & compositor optimization
+# Switches Hyprland, GPU, and system power states between AC and Battery modes.
+
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/shayar"
+mkdir -p "$STATE_DIR"
+PROFILE_FILE="$STATE_DIR/power_profile"
+
+notify() {
+    local summary="$1"
+    local message="$2"
+    local icon="${3:-battery}"
+    if [ -f "$HOME/.config/shayar/scripts/shayar-notification-handler" ]; then
+        source "$HOME/.config/shayar/scripts/shayar-notification-handler"
+        notify_user --a "Power Manager" --i "$icon" --s "$summary" --m "$message" --u "low"
+    else
+        notify-send -i "$icon" "$summary" "$message" 2>/dev/null || true
+    fi
+}
+
+is_on_battery() {
+    # 1. Check UPower if available
+    if command -v upower >/dev/null 2>&1; then
+        local on_bat
+        on_bat=$(upower -i /org/freedesktop/UPower/devices/DisplayDevice 2>/dev/null | awk '/state:/ {print $2}')
+        if [[ "$on_bat" == "discharging" ]]; then
+            return 0
+        elif [[ "$on_bat" == "charging" || "$on_bat" == "fully-charged" ]]; then
+            return 1
+        fi
+    fi
+
+    # 2. Check sysfs AC online status
+    for ac in /sys/class/power_supply/AC* /sys/class/power_supply/ADP*; do
+        if [ -f "$ac/online" ]; then
+            if [ "$(cat "$ac/online")" -eq 1 ]; then
+                return 1
+            else
+                return 0
+            fi
+        fi
+    done
+
+    # 3. Fallback: check battery status
+    for bat in /sys/class/power_supply/BAT*; do
+        if [ -f "$bat/status" ]; then
+            if [ "$(cat "$bat/status")" = "Discharging" ]; then
+                return 0
+            fi
+        fi
+    done
+
+    return 1
+}
+
+set_gpu_power_limit() {
+    local watts="$1"
+    if command -v systemctl >/dev/null 2>&1; then
+        sudo systemctl enable --now nvidia-powerd.service >/dev/null 2>&1 || true
+    fi
+    if command -v nvidia-smi >/dev/null 2>&1; then
+        sudo nvidia-smi -pl "$watts" >/dev/null 2>&1 || true
+    fi
+}
+
+set_battery_mode() {
+    echo ":: Applying Battery Saver Profile..."
+    
+    # 1. Hyprland: disable heavy GPU rendering (blur, shadows, animations)
+    if command -v hyprctl >/dev/null 2>&1; then
+        hyprctl eval "hl.config({ decoration = { blur = { enabled = false }, shadow = { enabled = false } }, animations = { enabled = false } })" >/dev/null 2>&1 || true
+    fi
+
+    # 2. Power Profiles Daemon: set power-saver
+    if command -v powerprofilesctl >/dev/null 2>&1; then
+        powerprofilesctl set power-saver >/dev/null 2>&1 || true
+    fi
+
+    # 3. CPU Turbo Boost: disable to prevent frequency/wattage spikes
+    if [ -w /sys/devices/system/cpu/cpufreq/boost ]; then
+        echo 0 > /sys/devices/system/cpu/cpufreq/boost 2>/dev/null || true
+    fi
+
+    # 4. PCIe ASPM: set powersupersave if writable
+    if [ -w /sys/module/pcie_aspm/parameters/policy ]; then
+        echo powersupersave > /sys/module/pcie_aspm/parameters/policy 2>/dev/null || true
+    fi
+
+    # 5. Energy Performance Preference
+    for epp in /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference; do
+        if [ -w "$epp" ]; then
+            echo power > "$epp" 2>/dev/null || true
+        fi
+    done
+
+    # 6. GPU Power Limit: cap dGPU for quiet / battery saver
+    set_gpu_power_limit 60
+
+    echo "battery" > "$PROFILE_FILE"
+    notify "Battery Saver Active" "Blur, shadows, animations & boost disabled to extend battery." "battery-low-symbolic"
+}
+
+set_ac_mode() {
+    echo ":: Applying AC Performance Profile..."
+
+    # 1. Hyprland: restore visual fidelity (blur, shadows, animations)
+    if command -v hyprctl >/dev/null 2>&1; then
+        hyprctl eval "hl.config({ decoration = { blur = { enabled = true }, shadow = { enabled = true } }, animations = { enabled = true } })" >/dev/null 2>&1 || true
+    fi
+
+    # 2. Power Profiles Daemon: set balanced
+    if command -v powerprofilesctl >/dev/null 2>&1; then
+        powerprofilesctl set balanced >/dev/null 2>&1 || true
+    fi
+
+    # 3. CPU Turbo Boost: re-enable boost for max performance
+    if [ -w /sys/devices/system/cpu/cpufreq/boost ]; then
+        echo 1 > /sys/devices/system/cpu/cpufreq/boost 2>/dev/null || true
+    fi
+
+    # 4. PCIe ASPM: restore default policy
+    if [ -w /sys/module/pcie_aspm/parameters/policy ]; then
+        echo default > /sys/module/pcie_aspm/parameters/policy 2>/dev/null || true
+    fi
+
+    # 5. Energy Performance Preference
+    for epp in /sys/devices/system/cpu/cpu*/cpufreq/energy_performance_preference; do
+        if [ -w "$epp" ]; then
+            echo balance_performance > "$epp" 2>/dev/null || true
+        fi
+    done
+
+    # 6. GPU Power Limit: max performance on AC
+    set_gpu_power_limit 95
+
+    echo "ac" > "$PROFILE_FILE"
+    notify "AC Profile Active" "Charger connected: full desktop effects and performance enabled." "ac-adapter-symbolic"
+}
+
+show_status() {
+    local cur_profile="unknown"
+    [ -f "$PROFILE_FILE" ] && cur_profile=$(cat "$PROFILE_FILE")
+
+    local pwr_state="AC (Plugged In)"
+    if is_on_battery; then
+        pwr_state="Battery (Discharging)"
+    fi
+
+    echo "=== Shayar Power & Battery Status ==="
+    echo "Power Source:   $pwr_state"
+    echo "Active Profile: $cur_profile"
+
+    if command -v upower >/dev/null 2>&1; then
+        local rate cap pct
+        pct=$(upower -i /org/freedesktop/UPower/devices/DisplayDevice 2>/dev/null | awk '/percentage:/ {print $2}')
+        rate=$(upower -i /org/freedesktop/UPower/devices/DisplayDevice 2>/dev/null | awk '/energy-rate:/ {print $2 " " $3}')
+        echo "Battery Charge: ${pct:-unknown}"
+        echo "Discharge Rate: ${rate:-unknown}"
+    fi
+
+    if command -v nvidia-smi >/dev/null 2>&1; then
+        echo -n "NVIDIA dGPU:    "
+        nvidia-smi --query-gpu=pstate,power.draw,utilization.gpu --format=csv,noheader 2>/dev/null || echo "N/A"
+    fi
+
+    if [ -f /sys/devices/system/cpu/cpufreq/boost ]; then
+        local b
+        b=$(cat /sys/devices/system/cpu/cpufreq/boost 2>/dev/null || echo "N/A")
+        echo "CPU Boost:      $b (1=enabled, 0=disabled)"
+    fi
+}
+
+case "${1:-}" in
+    --battery|-b)
+        set_battery_mode
+        ;;
+    --ac|-a)
+        set_ac_mode
+        ;;
+    --apply)
+        if is_on_battery; then
+            set_battery_mode
+        else
+            set_ac_mode
+        fi
+        ;;
+    --status|-s)
+        show_status
+        ;;
+    *)
+        echo "Usage: $(basename "$0") [--battery | --ac | --apply | --status]"
+        exit 1
+        ;;
+esac

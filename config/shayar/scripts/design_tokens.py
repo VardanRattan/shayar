@@ -183,7 +183,7 @@ def generate_fastfetch(tokens, out_dir):
         f.write(resolved)
     print(f"Generated: {dst}")
 
-def generate_gtk_ini(tokens, out_dir):
+def generate_gtk_ini(tokens, out_dir, config_home=None):
     out_path = os.path.join(out_dir, "design-tokens-gtk.ini")
     typo = tokens.get("typography", {})
     ui_font = f"{typo.get('ui_family', 'Geist')} {typo.get('ui_size', 11)}"
@@ -191,18 +191,43 @@ def generate_gtk_ini(tokens, out_dir):
     cursor_theme = typo.get("cursor_theme", "Bibata-Modern-Ice")
     cursor_size = typo.get("cursor_size", 24)
     
+    # Auto-detect best dark theme
+    home = os.environ.get("HOME", "")
+    theme_name = "Arc-Dark"
+    candidates = [
+        os.path.join(home, ".themes", "adw-gtk3-dark"),
+        "/usr/share/themes/adw-gtk3-dark",
+        os.path.join(home, ".themes", "Arc-Dark"),
+        "/usr/share/themes/Arc-Dark",
+    ]
+    for c in candidates:
+        if os.path.isdir(c):
+            theme_name = os.path.basename(c)
+            break
+
     content = f"""# Generated from design-tokens.json -- DO NOT EDIT
 [Settings]
-gtk-theme-name = Adwaita-dark
+gtk-theme-name = {theme_name}
 gtk-icon-theme-name = {icon_theme}
 gtk-cursor-theme-name = {cursor_theme}
 gtk-cursor-theme-size = {cursor_size}
 gtk-font-name = {ui_font}
-gtk-application-prefer-dark-theme = true
+gtk-application-prefer-dark-theme = 1
 """
     with open(out_path, "w") as f:
         f.write(content)
     print(f"Generated: {out_path}")
+
+    # Synchronize gtk-3.0 and gtk-4.0 settings.ini if config_home provided
+    if config_home:
+        for v in ("gtk-3.0", "gtk-4.0"):
+            ini_dir = os.path.join(config_home, v)
+            if os.path.isdir(ini_dir):
+                ini_path = os.path.join(ini_dir, "settings.ini")
+                with open(ini_path, "w") as f:
+                    f.write(content)
+                print(f"Generated: {ini_path}")
+
 
 def main():
     home = os.environ.get("HOME", "")
@@ -231,7 +256,7 @@ def main():
     generate_shayar_json(tokens, out_dir)
     generate_quickshell_tokens(tokens, out_dir)
     generate_fastfetch(tokens, out_dir)
-    generate_gtk_ini(tokens, out_dir)
+    generate_gtk_ini(tokens, out_dir, config_home)
 
 if __name__ == "__main__":
     main()

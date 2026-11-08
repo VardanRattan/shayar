@@ -1,2 +1,22 @@
 @import 'colors.css';
 
+/* Base dark styling for GTK3 widgets */
+window, .background {
+    background-color: @theme_bg_color;
+    color: @theme_fg_color;
+}
+
+headerbar {
+    background-color: @headerbar_bg_color;
+    color: @headerbar_fg_color;
+}
+
+view, textview text {
+    background-color: @theme_base_color;
+    color: @theme_text_color;
+}
+
+entry {
+    background-color: @theme_base_color;
+    color: @theme_text_color;
+}

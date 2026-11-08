@@ -38,6 +38,15 @@ done < "$config"
 source "$HOME/.config/shayar/settings/shayar.conf" 2>/dev/null || true
 terminal="${TERMINAL:-kitty}"
 
+# Validate or fallback theme if specified theme is not installed
+if [ ! -d "/usr/share/themes/$gtk_theme" ] && [ ! -d "$HOME/.themes/$gtk_theme" ]; then
+    if [ -d "/usr/share/themes/adw-gtk3-dark" ] || [ -d "$HOME/.themes/adw-gtk3-dark" ]; then
+        gtk_theme="adw-gtk3-dark"
+    elif [ -d "/usr/share/themes/Arc-Dark" ] || [ -d "$HOME/.themes/Arc-Dark" ]; then
+        gtk_theme="Arc-Dark"
+    fi
+fi
+
 if [[ "$prefer_dark_theme" == "0" || "$prefer_dark_theme" == "false" ]]; then
     prefer_dark_theme_value="prefer-light"
 else
@@ -61,3 +70,8 @@ set_gsetting icon-theme "$icon_theme"
 set_gsetting cursor-theme "$cursor_theme"
 set_gsetting font-name "$font_name"
 set_gsetting color-scheme "$prefer_dark_theme_value"
+
+# Reload xsettingsd if running
+if pgrep -x xsettingsd >/dev/null 2>&1; then
+    killall -HUP xsettingsd 2>/dev/null || true
+fi
